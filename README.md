@@ -1,9 +1,20 @@
-# astrbot_plugin_status
+# 🌟 系统状态
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![AstrBot](https://img.shields.io/badge/AstrBot-Plugin-green.svg)](https://github.com/AstrBotDevs/AstrBot)
+<div align="center">
 
-一个用于展示系统状态的简易可爱插件，支持生成可视化的状态卡片。
+<img src="https://count.getloli.com/@astrbot_plugin_status?name=astrbot_plugin_status&theme=rule34&padding=7&offset=0&align=top&scale=1&pixelated=1&darkmode=auto" alt="Moe Counter">
+
+**一个用于展示系统状态的简易可爱插件，支持生成可视化的状态卡片。**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue)
+![AstrBot](https://img.shields.io/badge/AstrBot-%E2%89%A54.10.4-green)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey)
+[![Last Commit](https://img.shields.io/github/last-commit/FlanChanXwO/astrbot_plugin_status)](https://github.com/FlanChanXwO/astrbot_plugin_status/commits/master)
+
+</div>
+
+本插件完全开源免费，欢迎 Issue 和 PR。
 
 ---
 
@@ -108,14 +119,6 @@
 1. 在配置中找到 `banner_image` 项
 2. 点击上传按钮选择背景图片（推荐尺寸：1200x600 或更高）
 3. 保存配置后发送 `/状态` 查看效果
-
----
-
-## 📚 相关链接
-
-- [AstrBot 官方仓库](https://github.com/AstrBotDevs/AstrBot)
-- [AstrBot 插件开发文档（中文）](https://docs.astrbot.app/dev/star/plugin-new.html)
-- [AstrBot 插件开发文档（English）](https://docs.astrbot.app/en/dev/star/plugin-new.html)
 
 ---
 
