@@ -6,7 +6,7 @@
 
 **一个用于展示系统状态的简易可爱插件，支持生成可视化的状态卡片。**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License: APGL](https://img.shields.io/badge/License-APGL-blue.svg)](https://opensource.org/licenses/MIT)
 ![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![AstrBot](https://img.shields.io/badge/AstrBot-%E2%89%A54.10.4-green)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey)
@@ -124,6 +124,6 @@
 
 ## 📄 开源协议
 
-本项目基于 [MIT](LICENSE) 协议开源。
+本项目基于 [APGL](LICENSE) 协议开源。
 
 ---
