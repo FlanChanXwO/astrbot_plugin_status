@@ -79,7 +79,13 @@ class SystemDataSource:
 
     def get_cpu_name(self) -> str:
         """获取CPU名称，并截断过长的部分"""
-        cpu_name = self._get_cpu_name_linux()
+        system = platform.system()
+        if system == "Linux":
+            cpu_name = self._get_cpu_name_linux()
+        elif system == "Windows":
+            cpu_name = self._get_cpu_name_windows()
+        else:
+            cpu_name = self._get_cpu_name_generic()
         return self._truncate_text(cpu_name)
 
     def _get_cpu_name_linux(self) -> str:
@@ -95,17 +101,40 @@ class SystemDataSource:
                         return line.split(":", 1)[1].strip()
         except Exception:
             pass
+        return self._get_cpu_name_generic()
 
+    def _get_cpu_name_windows(self) -> str:
+        """在Windows上获取CPU名称"""
+        try:
+            # 尝试使用wmic获取CPU名称
+            import subprocess
+            result = subprocess.run(
+                ["wmic", "cpu", "get", "Name", "/value"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                for line in result.stdout.splitlines():
+                    if line.startswith("Name="):
+                        cpu_name = line.split("=", 1)[1].strip()
+                        if cpu_name:
+                            return cpu_name
+        except Exception:
+            pass
+        return self._get_cpu_name_generic()
+
+    def _get_cpu_name_generic(self) -> str:
+        """通用方式获取CPU名称（使用psutil或platform）"""
         # 尝试用psutil
-        if psutil is not None:
-            try:
-                freq = psutil.cpu_freq()
-                cores = psutil.cpu_count() or 1
-                if freq and freq.current:
-                    ghz = freq.current / 1000.0
-                    return f"{cores} Core @ {ghz:.2f}GHz"
-            except Exception:
-                pass
+        try:
+            freq = psutil.cpu_freq()
+            cores = psutil.cpu_count() or 1
+            if freq and freq.current:
+                ghz = freq.current / 1000.0
+                return f"{cores} Core @ {ghz:.2f}GHz"
+        except Exception:
+            pass
 
         # 回退到platform
         cpu_name = platform.processor()
