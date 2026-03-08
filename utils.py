@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import base64
-import logging
 from pathlib import Path
 
 from astrbot.core.utils.io import download_image_by_url
-
-logger = logging.getLogger(__name__)
+from astrbot.api import logger
 
 
 def inline_fonts_in_css(css: str, base_dir: Path) -> str:
@@ -41,6 +39,9 @@ def get_image_data_uri(
     is_user_path: bool = False,
 ) -> str:
     """将图片文件转换为 Base64 编码的 Data URI。"""
+    # 默认的 1x1 像素透明 PNG 占位图
+    _placeholder_uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+
     path = Path(image_path)
     if not path.is_absolute():
         base = plugin_data_dir if is_user_path else base_dir
@@ -48,7 +49,7 @@ def get_image_data_uri(
 
     if not path.exists() or not path.is_file():
         logger.warning(f"图片文件不存在: {path}")
-        return ""
+        return _placeholder_uri
     try:
         suffix = path.suffix.lower().lstrip(".") or "png"
         mime = "jpeg" if suffix in {"jpg", "jpeg"} else "png"
@@ -56,7 +57,7 @@ def get_image_data_uri(
         return f"data:image/{mime};base64,{encoded_data}"
     except Exception as e:
         logger.error(f"读取或编码图片失败: {path}, 错误: {e}")
-        return ""
+        return _placeholder_uri
 
 
 async def image_url_to_base64(image_url: str) -> str | None:

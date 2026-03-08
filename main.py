@@ -1,24 +1,21 @@
 from __future__ import annotations
 
-import logging
 import random
 from dataclasses import asdict
 from pathlib import Path
 
 import mcp.types
 
-from astrbot.api import AstrBotConfig
+from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star
 from astrbot.core.exceptions import ProviderNotFoundError
 from astrbot.core.provider.register import llm_tools
-from astrbot.core.utils.astrbot_path import get_astrbot_data_path
+from astrbot.api.star import StarTools
 
 from .data_source import SystemDataSource
 from .models import StatusPayload
 from .utils import get_image_data_uri, image_url_to_base64, inline_fonts_in_css
-
-logger = logging.getLogger(__name__)
 
 class StatusPlugin(Star):
     """
@@ -29,7 +26,7 @@ class StatusPlugin(Star):
         self.base_dir = Path(__file__).parent
         self.config = config
         self.context = context
-        self.plugin_data_dir = Path(get_astrbot_data_path()) / "plugin_data" / self.name
+        self.plugin_data_dir = StarTools.get_data_dir(self)
         self.template_path = self.base_dir / "templates" / "main.html"
         self.css_path = self.base_dir / "templates" / "res" / "css" / "style.css"
         self.character_dir = self.base_dir / "templates" / "res" / "image" / "character"
@@ -134,7 +131,7 @@ class StatusPlugin(Star):
             except Exception:
                 logger.exception("LLM analysis failed")
 
-    def _build_render_data(self, event: AstrMessageEvent) -> tuple[str, StatusPayload]:
+    async def _build_render_data(self, event: AstrMessageEvent) -> tuple[str, StatusPayload]:
         """为渲染构建模板和负载数据。"""
         html = self.template_path.read_text(encoding="utf-8-sig")
         banner_uri = ""
@@ -171,7 +168,7 @@ class StatusPlugin(Star):
             css_style=inlined_css,
             bot_name=self.bot_name,
             metrics=self.data_source.get_metrics(),
-            cpu_name=self.data_source.get_cpu_name(),
+            cpu_name=await self.data_source.get_cpu_name(),
             os_name=self.data_source.get_os_name(),
             project_version=self.data_source.get_project_version(event),
             plugin_count=plugin_count_str,

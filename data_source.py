@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import datetime as dt
 import platform
 import shutil
@@ -10,6 +11,7 @@ import psutil
 
 from astrbot.api.event import AstrMessageEvent
 from astrbot.api.star import Context
+from astrbot.api import logger
 
 from .models import Metric
 
@@ -77,13 +79,13 @@ class SystemDataSource:
             ),
         ]
 
-    def get_cpu_name(self) -> str:
+    async def get_cpu_name(self) -> str:
         """获取CPU名称，并截断过长的部分"""
         system = platform.system()
         if system == "Linux":
             cpu_name = self._get_cpu_name_linux()
         elif system == "Windows":
-            cpu_name = self._get_cpu_name_windows()
+            cpu_name = await self._get_cpu_name_windows()
         else:
             cpu_name = self._get_cpu_name_generic()
         return self._truncate_text(cpu_name)
@@ -99,29 +101,35 @@ class SystemDataSource:
                     # ARM处理器可能用不同的字段
                     if line.startswith("Hardware"):
                         return line.split(":", 1)[1].strip()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to get CPU name on Linux: {e}")
         return self._get_cpu_name_generic()
 
-    def _get_cpu_name_windows(self) -> str:
-        """在Windows上获取CPU名称"""
+    async def _get_cpu_name_windows(self) -> str:
+        """在Windows上获取CPU名称（异步方式）"""
         try:
-            # 尝试使用wmic获取CPU名称
-            import subprocess
-            result = subprocess.run(
-                ["wmic", "cpu", "get", "Name", "/value"],
-                capture_output=True,
-                text=True,
-                timeout=5
+            proc = await asyncio.create_subprocess_exec(
+                "wmic", "cpu", "get", "Name", "/value",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
-            if result.returncode == 0:
-                for line in result.stdout.splitlines():
-                    if line.startswith("Name="):
-                        cpu_name = line.split("=", 1)[1].strip()
-                        if cpu_name:
-                            return cpu_name
-        except Exception:
-            pass
+            try:
+                stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=5.0)
+                if proc.returncode == 0:
+                    for line in stdout.decode("utf-8", errors="ignore").splitlines():
+                        if line.startswith("Name="):
+                            cpu_name = line.split("=", 1)[1].strip()
+                            if cpu_name:
+                                return cpu_name
+            except asyncio.TimeoutError:
+                logger.debug("Timeout getting CPU name on Windows")
+                try:
+                    proc.kill()
+                    await proc.wait()
+                except Exception:
+                    pass
+        except Exception as e:
+            logger.debug(f"Failed to get CPU name on Windows: {e}")
         return self._get_cpu_name_generic()
 
     def _get_cpu_name_generic(self) -> str:
@@ -133,8 +141,8 @@ class SystemDataSource:
             if freq and freq.current:
                 ghz = freq.current / 1000.0
                 return f"{cores} Core @ {ghz:.2f}GHz"
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to get CPU info from psutil: {e}")
 
         # 回退到platform
         cpu_name = platform.processor()
@@ -184,7 +192,8 @@ class SystemDataSource:
             if not isinstance(stars, list):
                 return 0
             return len(stars)
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Failed to get plugin counts: {e}")
             return 0
 
     def get_net_speed_kbs(self) -> tuple[float, float]:
@@ -210,7 +219,8 @@ class SystemDataSource:
             self._last_net_bytes_recv = int(io.bytes_recv)
 
             return up / elapsed / 1024.0, down / elapsed / 1024.0
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Failed to get network speed: {e}")
             return 0.0, 0.0
 
     def get_uptime_text(self) -> str:
@@ -237,7 +247,8 @@ class SystemDataSource:
             if ghz > 0:
                 return f"{cpu_pct:.1f}% - {ghz:.2f}GHz [{cores} Core]"
             return f"{cpu_pct:.1f}% [{cores} 核]"
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Failed to get CPU display info: {e}")
             return f"{cpu_pct:.1f}%"
 
     def _cpu_percent(self) -> float:
@@ -245,7 +256,8 @@ class SystemDataSource:
             return 0.0
         try:
             return float(psutil.cpu_percent(interval=None))
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Failed to get CPU percent: {e}")
             return 0.0
 
     def _memory_usage(self) -> tuple[float, float, float]:
@@ -256,7 +268,8 @@ class SystemDataSource:
             used = (vm.total - vm.available) / (1024 ** 3)
             total = vm.total / (1024 ** 3)
             return used, total, float(vm.percent)
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Failed to get memory usage: {e}")
             return 0.0, 0.0, 0.0
 
     def _swap_usage(self) -> tuple[float, float, float]:
@@ -268,7 +281,8 @@ class SystemDataSource:
             total = sm.total / (1024 ** 3)
             pct = float(sm.percent if sm.total else 0.0)
             return used, total, pct
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Failed to get swap usage: {e}")
             return 0.0, 0.0, 0.0
 
     def _disk_usage(self) -> tuple[float, float, float]:
@@ -278,7 +292,8 @@ class SystemDataSource:
             total = du.total / (1024 ** 3)
             pct = (used / total) * 100 if total else 0.0
             return used, total, pct
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Failed to get disk usage: {e}")
             return 0.0, 0.0, 0.0
 
     def _load_percent(self, cpu_pct: float) -> float:
@@ -288,7 +303,8 @@ class SystemDataSource:
             la1, _, _ = psutil.getloadavg()
             cpu_count = psutil.cpu_count() or 1
             return min(100.0, max(cpu_pct, (la1 / cpu_count) * 100))
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Failed to get load percent: {e}")
             return cpu_pct
 
     def _offset(self, percent: float) -> float:
