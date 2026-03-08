@@ -63,7 +63,7 @@ class StatusPlugin(Star):
     async def _get_status_tool_handler(self, event: AstrMessageEvent) -> mcp.types.CallToolResult:
         """LLM tool handler: render status image and return as base64 for LLM to view."""
         try:
-            html_content, payload = self._build_render_data(event)
+            html_content, payload = await self._build_render_data(event)
             payload_dict = asdict(payload)
             image_url = await self.html_render(
                 html_content,
@@ -95,7 +95,7 @@ class StatusPlugin(Star):
     async def show_status(self, event: AstrMessageEvent):
         """返回状态图片"""
         try:
-            html_content, payload = self._build_render_data(event)
+            html_content, payload = await self._build_render_data(event)
             payload_dict = asdict(payload)
             image_url = await self.html_render(
                 html_content,
