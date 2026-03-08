@@ -8,7 +8,7 @@ from astrbot.api import logger
 
 
 def inline_fonts_in_css(css: str, base_dir: Path) -> str:
-    """Replace relative font url() in CSS with base64 data URIs when font files exist."""
+    """通过 base64 URL 替换字体相对资源路径"""
     font_dir = base_dir / "templates" / "res" / "fonts"
     if not font_dir.is_dir():
         return css
@@ -61,7 +61,7 @@ def get_image_data_uri(
 
 
 async def image_url_to_base64(image_url: str) -> str | None:
-    """Convert image URL (http or local path) to base64 string."""
+    """图片URL转base64"""
     try:
         if image_url.startswith("http"):
             path = await download_image_by_url(image_url)

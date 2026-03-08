@@ -106,7 +106,7 @@ class SystemDataSource:
         return self._get_cpu_name_generic()
 
     async def _get_cpu_name_windows(self) -> str:
-        """在Windows上获取CPU名称（异步方式）"""
+        """在Windows上获取CPU名称"""
         try:
             proc = await asyncio.create_subprocess_exec(
                 "wmic", "cpu", "get", "Name", "/value",
