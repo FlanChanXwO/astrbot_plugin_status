@@ -37,8 +37,7 @@ class StatusPlugin(Star):
         self.render_options = {
             "full_page": True,
             "type": "png",
-            "width": 800,
-            "height": 1200,
+            "scale": "device",
             "device_scale_factor": 2.0
         }
         self.data_source = SystemDataSource(context, self.base_dir)
