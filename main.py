@@ -26,7 +26,7 @@ class StatusPlugin(Star):
         self.base_dir = Path(__file__).parent
         self.config = config
         self.context = context
-        self.plugin_data_dir = StarTools.get_data_dir(self)
+        self.plugin_data_dir = StarTools.get_data_dir(self.name)
         self.template_path = self.base_dir / "templates" / "main.html"
         self.css_path = self.base_dir / "templates" / "res" / "css" / "style.css"
         self.character_dir = self.base_dir / "templates" / "res" / "image" / "character"
