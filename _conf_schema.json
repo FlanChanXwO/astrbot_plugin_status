@@ -1,0 +1,24 @@
+{
+  "bot_name": {
+    "type": "string",
+    "description": "显示在状态卡片上的机器人名称。",
+    "default": "AstrBot"
+  },
+  "banner_image": {
+    "type": "file",
+    "description": "自定义状态背景图",
+    "default": [],
+    "file_types": ["png", "jpg", "jpeg"]
+  },
+  "enable_llm_analysis": {
+    "type": "bool",
+    "description": "在 /状态 命令返回图片后，是否调用 LLM 分析",
+    "default": false
+  },
+  "llm_analysis_prompt": {
+    "type": "string",
+    "description": "LLM 分析状态图时使用的提示词。",
+    "default": "请简要分析这张系统状态图片，用一两句话总结 CPU、内存、磁盘等关键信息。"
+  }
+}
+

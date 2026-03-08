@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=500, height=1000, initial-scale=1.0" />
+    <title>Bot Status</title>
+    <link href="https://fonts.googleapis.com/css2?family=ADLaM+Display&family=Spicy+Rice&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    {{ css_style | safe }}
+</head>
+<body>
+<div class="card">
+    <div class="header">
+        <div class="top-banner"></div>
+    </div>
+    <div class="main-content">
+        <div class="bot-info-header">
+            <div class="bot-title-group">
+                <div><span class="nickname">{{ bot_name }}</span></div>
+                <div class="radio-button-wrapper">
+                    <span class="radio-dot"></span>
+                    <span class="bot-logo">Bot of AstrBot</span>
+                </div>
+            </div>
+            <div class="bot-avatar"></div>
+        </div>
+
+        <div class="status-grid">
+            {% for item in metrics %}
+            <div class="status-item">
+                <div class="icon-bg {{ item.icon_class }}">
+                    <svg class="progress-ring" viewBox="0 0 120 120">
+                        <circle class="progress-ring-bg" cx="60" cy="60" r="54"></circle>
+                        <circle class="progress-ring-fg" cx="60" cy="60" r="54" style="stroke-dashoffset: {{ item.offset }}"></circle>
+                    </svg>
+                    <svg class="status-icon" viewBox="0 0 1304 1024" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(-30deg);"><path d="M0 446.49054a171.094255 145.438963 90 1 0 290.877927 0 171.094255 145.438963 90 1 0-290.877927 0Z"></path><path d="M1126.923945 768.927392a140.307905 171.094255 12.07 1 0 71.553865-334.6237 140.307905 171.094255 12.07 1 0-71.553865 334.6237Z"></path><path d="M353.069892 190.999222a190.999222 149.508423 90 1 0 299.016847 0 190.999222 149.508423 90 1 0-299.016847 0Z"></path><path d="M887.858242 431.109679a149.508423 190.999222 6.71 1 0 44.634256-379.38186 149.508423 190.999222 6.71 1 0-44.634256 379.38186Z"></path><path d="M962.073434 786.025054c-10.704449 162.07067-167.201728 249.033261-352.36216 236.736415s-328.918531-118.899006-318.479481-281.058143 173.305918-264.957235 354.662289-271.415291c187.549028 37.686739 326.883801 153.577883 316.179352 315.737019z"></path></svg>
+                </div>
+                <div class="info">
+                    <div class="label">{{ item.label }}</div>
+                    <div class="value-large">{{ item.value }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="details-box">
+            <div class="detail-row"><span class="detail-label">CPU</span> <span class="detail-value">{{ cpu_name }}</span></div>
+            <div class="detail-row"><span class="detail-label">System</span> <span class="detail-value">{{ os_name }}</span></div>
+            <div class="detail-row"><span class="detail-label">Version</span> <span class="detail-value">{{ project_version }}</span></div>
+            <div class="detail-row"><span class="detail-label">Plugins</span> <span class="detail-value">{{ plugin_count }} loaded</span></div>
+            <div class="detail-row"><span class="detail-label">Network</span> <span class="detail-value">↑ {{ upload_speed }} KB/s | ↓ {{ download_speed }} KB/s</span></div>
+        </div>
+
+        <div class="footer">
+            <span class="footer-title">{{ dashboard_name }} Dashboard</span>
+            <span class="footer-uptime">已运行 {{ uptime }}</span>
+        </div>
+    </div>
+</div>
+ <!-- 背景装饰用的猫爪 -->
+ <svg class="bg-tiny-paw" viewBox="0 0 1304 1024" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(0deg) scaleX(-1);"><path d="M0 446.49054a171.094255 145.438963 90 1 0 290.877927 0 171.094255 145.438963 90 1 0-290.877927 0Z"></path><path d="M1126.923945 768.927392a140.307905 171.094255 12.07 1 0 71.553865-334.6237 140.307905 171.094255 12.07 1 0-71.553865 334.6237Z"></path><path d="M353.069892 190.999222a190.999222 149.508423 90 1 0 299.016847 0 190.999222 149.508423 90 1 0-299.016847 0Z"></path><path d="M887.858242 431.109679a149.508423 190.999222 6.71 1 0 44.634256-379.38186 149.508423 190.999222 6.71 1 0-44.634256 379.38186Z"></path><path d="M962.073434 786.025054c-10.704449 162.07067-167.201728 249.033261-352.36216 236.736415s-328.918531-118.899006-318.479481-281.058143 173.305918-264.957235 354.662289-271.415291c187.549028 37.686739 326.883801 153.577883 316.179352 315.737019z"></path></svg>
+ <svg class="bg-small-paw" viewBox="0 0 1304 1024" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(0deg) scaleX(-1);"><path d="M0 446.49054a171.094255 145.438963 90 1 0 290.877927 0 171.094255 145.438963 90 1 0-290.877927 0Z"></path><path d="M1126.923945 768.927392a140.307905 171.094255 12.07 1 0 71.553865-334.6237 140.307905 171.094255 12.07 1 0-71.553865 334.6237Z"></path><path d="M353.069892 190.999222a190.999222 149.508423 90 1 0 299.016847 0 190.999222 149.508423 90 1 0-299.016847 0Z"></path><path d="M887.858242 431.109679a149.508423 190.999222 6.71 1 0 44.634256-379.38186 149.508423 190.999222 6.71 1 0-44.634256 379.38186Z"></path><path d="M962.073434 786.025054c-10.704449 162.07067-167.201728 249.033261-352.36216 236.736415s-328.918531-118.899006-318.479481-281.058143 173.305918-264.957235 354.662289-271.415291c187.549028 37.686739 326.883801 153.577883 316.179352 315.737019z"></path></svg>
+ <svg class="bg-medium-paw" viewBox="0 0 1304 1024" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(30deg) scaleX(-1);"><path d="M0 446.49054a171.094255 145.438963 90 1 0 290.877927 0 171.094255 145.438963 90 1 0-290.877927 0Z"></path><path d="M1126.923945 768.927392a140.307905 171.094255 12.07 1 0 71.553865-334.6237 140.307905 171.094255 12.07 1 0-71.553865 334.6237Z"></path><path d="M353.069892 190.999222a190.999222 149.508423 90 1 0 299.016847 0 190.999222 149.508423 90 1 0-299.016847 0Z"></path><path d="M887.858242 431.109679a149.508423 190.999222 6.71 1 0 44.634256-379.38186 149.508423 190.999222 6.71 1 0-44.634256 379.38186Z"></path><path d="M962.073434 786.025054c-10.704449 162.07067-167.201728 249.033261-352.36216 236.736415s-328.918531-118.899006-318.479481-281.058143 173.305918-264.957235 354.662289-271.415291c187.549028 37.686739 326.883801 153.577883 316.179352 315.737019z"></path></svg>
+ <svg class="bg-big-paw" viewBox="0 0 1304 1024" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(30deg) scaleX(-1);"><path d="M0 446.49054a171.094255 145.438963 90 1 0 290.877927 0 171.094255 145.438963 90 1 0-290.877927 0Z"></path><path d="M1126.923945 768.927392a140.307905 171.094255 12.07 1 0 71.553865-334.6237 140.307905 171.094255 12.07 1 0-71.553865 334.6237Z"></path><path d="M353.069892 190.999222a190.999222 149.508423 90 1 0 299.016847 0 190.999222 149.508423 90 1 0-299.016847 0Z"></path><path d="M887.858242 431.109679a149.508423 190.999222 6.71 1 0 44.634256-379.38186 149.508423 190.999222 6.71 1 0-44.634256 379.38186Z"></path><path d="M962.073434 786.025054c-10.704449 162.07067-167.201728 249.033261-352.36216 236.736415s-328.918531-118.899006-318.479481-281.058143 173.305918-264.957235 354.662289-271.415291c187.549028 37.686739 326.883801 153.577883 316.179352 315.737019z"></path></svg>
+
+</body>
+</html>

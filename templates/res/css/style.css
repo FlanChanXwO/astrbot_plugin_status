@@ -1,0 +1,261 @@
+/* Local fonts: url() replaced with data URI at runtime when font files exist under templates/res/fonts/ */
+@font-face {
+    font-family: 'baotuxiaobaiti';
+    src: url('../fonts/baotu.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'DingTalk JinBuTi';
+    src: url('../fonts/DingTalk-JinBuTi.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* ADLaM Display and Spicy Rice loaded via Google Fonts in HTML; use these family names */
+
+/* --- 全局和基础样式 --- */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: fit-content;
+    height: fit-content;
+    background: transparent;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.card {
+    width: 500px;
+    background-color: #F8F4F2;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 15px 35px rgba(90, 80, 80, 0.12), 0 5px 15px rgba(0, 0, 0, 0.08);
+    font-family: 'ADLaM Display', sans-serif;
+}
+
+/* --- 头部波浪形裁剪 --- */
+.header {
+    height: 280px;
+    background-color: #FDECF2;
+    clip-path: ellipse(90% 82% at 32% 5%);
+}
+
+
+.top-banner {
+    width: 100%;
+    height: 400px;
+    background-image: url('${topBannerImage}');
+    background-size: contain;
+    background-position: center top;
+    background-repeat: no-repeat;    /* 防止图片重复 */
+}
+
+
+.bot-avatar {
+    width: 130px;
+    height: 130px;
+    border-radius: 5px;
+    z-index: 2;
+    background-image: url('${characterImage}');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    flex-shrink: 0;
+}
+
+/* --- 主内容区 --- */
+.main-content {
+    /* 调整：左右内边距增加，让内容更居中 */
+    padding: 0 45px 30px;
+    margin-top: -65px;
+    position: relative;
+    z-index: 2;
+}
+
+/* --- Bot 信息和头像 --- */
+.bot-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    height: 100px;
+    margin-top: 40px;
+    /* 调整：减少底部间距，让状态列表更靠近 */
+}
+
+.bot-title-group {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.nickname {
+    font-family: 'baotuxiaobaiti', 'Ma Shan Zheng', cursive;
+    font-size: 36px;
+    color: rgb(84, 173, 255, 255);
+    font-weight: normal;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: relative;
+    top: 5px;
+    min-width: 0; /* 新增：修复flex布局下的文本溢出问题 */
+}
+
+
+/* --- Bot of ShiroBot 按钮 --- */
+.radio-button-wrapper {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 99px;
+    background-color: rgb(84, 173, 255);
+    padding: 6px 15px 6px 10px;
+    box-shadow: 0 2px 5px rgba(84, 173, 255, 0.3);
+    flex-shrink: 0; /* 新增：防止这个按钮被 flex 布局压缩 */
+}
+
+.radio-dot {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    /* 修改开始 */
+    background-color: rgb(84, 173, 255);
+    margin-right: 10px;
+    border: 2px solid #FFFFFF; /* 设置一个实心蓝色的圆环边框 */
+    box-sizing: border-box; /* 确保边框不会增加元素的总尺寸 */
+    /* 修改结束 */
+}
+
+.bot-logo {
+    font-size: 16px;
+    font-family: 'ADLaM Display', serif;
+    color: #FFFFFF;
+    font-weight: normal;
+    letter-spacing: 0.5px;
+}
+
+
+/* --- 状态网格 --- */
+.status-grid {
+    display: grid;
+    gap: 12px;
+}
+.status-item {
+    display: flex;
+    align-items: center;
+    font-family: "Spicy Rice", serif;
+    font-style: normal;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.05);
+}
+.icon-bg {
+    width: 48px;
+    height: 48px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 18px;
+}
+.status-item .info .label {
+    font-size: 16px;
+    margin-bottom: 2px;
+}
+.status-item .info .value {
+    font-size: 15px;
+    color: inherit; /* 继承父级颜色 */
+}
+.status-item .info .value-large {
+    font-size: 16px;
+}
+
+/* --- 环形进度条样式 (结构不变) --- */
+.progress-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.progress-ring-bg, .progress-ring-fg { fill: none; stroke-width: 8; }
+.progress-ring-bg { stroke: #eee; }
+.progress-ring-fg { stroke-dasharray: 339.29; stroke-dashoffset: 339.29; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease-out; }
+.status-icon { width: 26px; height: 26px; fill: currentColor; position: relative; z-index: 1; }
+
+/* --- 应用新的颜色配置 --- */
+.icon-cpu { color: rgb(84, 173, 255); }
+.icon-ram { color: rgb(255, 179, 204); }
+.icon-swap { color: rgb(251, 170, 147); }
+.icon-disk { color: rgb(184, 170, 159); }
+.icon-load { color: rgb(138, 222, 219); }
+
+.icon-cpu .progress-ring-fg { stroke: rgb(84, 173, 255); }
+.icon-ram .progress-ring-fg { stroke: rgb(255, 179, 204); }
+.icon-swap .progress-ring-fg { stroke: rgb(251, 170, 147); }
+.icon-disk .progress-ring-fg { stroke: rgb(184, 170, 159); }
+.icon-load .progress-ring-fg { stroke: rgb(138, 222, 219); }
+
+/* 文本颜色继承自 .icon-xx 的颜色 */
+.status-item:nth-child(1) { color: rgb(84, 173, 255); }
+.status-item:nth-child(2) { color: rgb(255, 179, 204); }
+.status-item:nth-child(3) { color: rgb(251, 170, 147); }
+.status-item:nth-child(4) { color: rgb(184, 170, 159); }
+.status-item:nth-child(5) { color: rgb(138, 222, 219); }
+
+/* --- 详细信息虚线框 --- */
+.details-box {
+    margin-top: 30px;
+    padding: 20px 25px;
+    border: 2px dashed #D5C8C0;
+    border-radius: 15px;
+    display: grid;
+    gap: 10px;
+    font-family: 'ADLaM Display', serif;
+    font-size: 15px;
+    /* 关键：给整个框内的文字添加柔和阴影 */
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
+}
+.detail-row { display: flex; align-items: center;     color: #887870;}
+.detail-label {
+    color: inherit;
+    width: 80px;
+    flex-shrink: 0;
+}
+.detail-value {
+    color: inherit;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0; /* 新增：修复flex布局下的文本溢出问题 */
+}
+
+/* --- 底部 --- */
+.footer {
+    margin-top: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* 应用颜色: 使用 details_color */
+    color: rgb(184, 170, 159);
+    font-size: 15px;
+    /* 关键：底部文字也加上阴影 */
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
+}
+.footer-title {
+    margin-left: 15px;
+    font-family: 'ADLaM Display', serif;
+}
+.footer-uptime {
+    margin-right: 5px;
+    font-family: 'DingTalk JinBuTi', 'Noto Sans SC', serif;
+}
+
+.bg-tiny-paw, .bg-small-paw, .bg-medium-paw, .bg-big-paw {
+    position: absolute; opacity: 0.15; fill: #a0a0a0;
+    pointer-events: none; z-index: 0;
+}
+.bg-tiny-paw { right: 120px; bottom: 90px; width: 30px; height: 30px; }
+.bg-small-paw { left: 50px; bottom: -225px; width: 60px; height: 60px; }
+.bg-medium-paw { right: 50px; bottom: 90px; width: 70px; height: 70px; }
+.bg-big-paw { right: 40px; bottom: -200px; width: 90px; height: 90px; }
