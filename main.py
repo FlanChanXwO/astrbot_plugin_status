@@ -36,9 +36,9 @@ class StatusPlugin(Star):
         self.default_banner_dir = self.base_dir / "templates" / "res" / "image" / "banner"
         self.render_options = {
             "full_page": True,
-            "type": "png",
+            "type": "jpeg",
             "scale": "device",
-            "device_scale_factor": 2.0
+            "quality": 100
         }
         self.data_source = SystemDataSource(context, self.base_dir)
         self.bot_name = config.get("bot_name")

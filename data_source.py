@@ -27,7 +27,7 @@ class SystemDataSource:
         self._last_net_sample_ts = 0.0
         self._process_start = dt.datetime.now()
 
-    def _truncate_text(self, text: str, max_length: int = 40) -> str:
+    def _truncate_text(self, text: str, max_length: int = 35) -> str:
         """如果文本超过最大长度，则截断并添加省略号"""
         if len(text) > max_length:
             return text[:max_length] + "..."
