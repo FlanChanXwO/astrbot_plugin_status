@@ -8,7 +8,7 @@ import mcp.types
 
 from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
-from astrbot.api.star import Context, Star
+from astrbot.api.star import Context, Star,register
 from astrbot.core.exceptions import ProviderNotFoundError
 from astrbot.core.provider.register import llm_tools
 from astrbot.api.star import StarTools
@@ -91,7 +91,7 @@ class StatusPlugin(Star):
             ]
         )
 
-    @filter.regex(r"^/?(状态|status)$")
+    @filter.command("status",alias={"状态"})
     async def show_status(self, event: AstrMessageEvent):
         """返回状态图片"""
         try:
