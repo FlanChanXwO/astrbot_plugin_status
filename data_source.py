@@ -114,22 +114,28 @@ class SystemDataSource:
 
     async def _get_cpu_name_windows(self) -> str:
         """在Windows上获取CPU名称"""
+        proc = None
         try:
             proc = await asyncio.create_subprocess_exec(
                 "wmic", "cpu", "get", "Name", "/value",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            try:
-                stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=5.0)
-                if proc.returncode == 0:
-                    for line in stdout.decode("utf-8", errors="ignore").splitlines():
-                        if line.startswith("Name="):
-                            cpu_name = line.split("=", 1)[1].strip()
-                            if cpu_name:
-                                return cpu_name
-            except asyncio.TimeoutError:
-                logger.debug("Timeout getting CPU name on Windows")
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=5.0)
+
+            if proc.returncode != 0:
+                return self._get_cpu_name_generic()
+
+            for line in stdout.decode("utf-8", errors="ignore").splitlines():
+                if line.startswith("Name="):
+                    cpu_name = line.split("=", 1)[1].strip()
+                    if cpu_name:
+                        return cpu_name
+                    break
+
+        except asyncio.TimeoutError:
+            logger.debug("Timeout getting CPU name on Windows")
+            if proc:
                 try:
                     proc.kill()
                     await proc.wait()
@@ -137,6 +143,7 @@ class SystemDataSource:
                     pass
         except Exception as e:
             logger.debug(f"Failed to get CPU name on Windows: {e}")
+
         return self._get_cpu_name_generic()
 
     def _get_cpu_name_generic(self) -> str:
@@ -296,10 +303,15 @@ class SystemDataSource:
             return 0.0, 0.0, 0.0
 
     def _load_percent(self, cpu_pct: float) -> float:
+        """计算系统负载百分比，Windows 下回退到 CPU 使用率"""
         try:
-            la1, _, _ = psutil.getloadavg()
-            cpu_count = psutil.cpu_count() or 1
-            return min(100.0, max(cpu_pct, (la1 / cpu_count) * 100))
+            # psutil.getloadavg() 仅在 Unix 系统上可用
+            if hasattr(psutil, "getloadavg"):
+                la1, _, _ = psutil.getloadavg()
+                cpu_count = psutil.cpu_count() or 1
+                return min(100.0, max(cpu_pct, (la1 / cpu_count) * 100))
+            # Windows 不支持 getloadavg，直接使用 CPU 使用率
+            return cpu_pct
         except Exception as e:
             logger.debug(f"Failed to get load percent: {e}")
             return cpu_pct

@@ -129,7 +129,7 @@ class StatusPlugin(Star):
             return
         yield event.image_result(image_url)
 
-        enable_llm: bool = self.config.get("enable_llm_analysis")
+        enable_llm = self.config.get("enable_llm_analysis", False)
         if enable_llm:
             try:
                 prov_id = await self.context.get_current_chat_provider_id(
@@ -147,6 +147,9 @@ class StatusPlugin(Star):
                     )
                 if llm_resp and llm_resp.completion_text:
                     yield event.plain_result(llm_resp.completion_text)
+                else:
+                    logger.warning("LLM analysis returned no completion text")
+                    yield event.plain_result("系统状态图片已生成，但AI分析未返回结果。")
             except asyncio.TimeoutError:
                 logger.warning("LLM analysis timed out")
             except ProviderNotFoundError:

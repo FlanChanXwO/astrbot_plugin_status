@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import ipaddress
+import os
 import socket
 from pathlib import Path
 from urllib.parse import urlparse
@@ -39,7 +41,7 @@ def _is_safe_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     return True
 
 
-def _is_safe_url(url: str) -> bool:
+async def _is_safe_url(url: str) -> bool:
     """检查 URL 是否安全，防止 SSRF 攻击"""
     try:
         parsed = urlparse(url)
@@ -68,10 +70,11 @@ def _is_safe_url(url: str) -> bool:
         if hostname in blocked_hosts or hostname.endswith(".localhost"):
             return False
 
-        # 解析域名并检查解析后的 IP 是否为内网地址
+        # 异步解析域名并检查解析后的 IP 是否为内网地址
         try:
-            # 获取所有解析结果
-            addr_info = socket.getaddrinfo(hostname, None)
+            # 获取事件循环并使用异步的 getaddrinfo
+            loop = asyncio.get_event_loop()
+            addr_info = await loop.getaddrinfo(hostname, None)
             for info in addr_info:
                 ip_str = info[4][0]
                 try:
@@ -167,45 +170,72 @@ async def image_url_to_base64(
     base_dir: Path,
     plugin_data_dir: Path,
 ) -> str | None:
-    """图片URL转base64"""
-    path = ""
+    """图片URL转base64
+
+    支持 http/https URL 和本地路径。对于本地路径，会检查路径安全以防止路径穿越攻击。
+    下载的临时文件会在使用后自动清理。
+    """
+    path_str = ""
+    is_temp_file = False
     try:
+        # 首先将输入路径标准化（resolve 会处理 .. 和 . 等路径穿越尝试）
+        path_obj = Path(image_url).resolve()
+
         if image_url.startswith("http"):
             # SSRF 安全检查
-            if not _is_safe_url(image_url):
+            if not await _is_safe_url(image_url):
                 logger.warning(f"拒绝访问不安全的 URL: {image_url}")
                 return None
-            path = await download_image_by_url(image_url)
+            path_str = await download_image_by_url(image_url)
+            is_temp_file = True
+            # 对下载的文件也进行 resolve，确保一致性
+            path_obj = Path(path_str).resolve()
         else:
             # 本地路径，需要安全检查
-            path = image_url
-            path_obj = Path(path)
-            if path_obj.is_absolute():
-                # 绝对路径需要检查是否在允许的范围内
-                allowed_dirs = [base_dir.resolve(), plugin_data_dir.resolve()]
-                is_allowed = any(
-                    _is_safe_path(path_obj, allowed) for allowed in allowed_dirs
-                )
-                if not is_allowed:
-                    logger.warning(f"拒绝访问路径范围外的文件: {path}")
-                    return None
+            # 所有路径都必须 resolve 后检查，防止路径穿越
+            allowed_dirs = [base_dir.resolve(), plugin_data_dir.resolve()]
+            is_allowed = any(
+                _is_safe_path(path_obj, allowed) for allowed in allowed_dirs
+            )
+            if not is_allowed:
+                logger.warning(f"拒绝访问路径范围外的文件: {path_obj}")
+                return None
+            path_str = str(path_obj)
 
         # 检查文件大小，防止内存压力
-        path_obj = Path(path)
         if path_obj.exists():
             file_size = path_obj.stat().st_size
             if file_size > MAX_FILE_SIZE:
                 logger.warning(
-                    f"图片文件过大 ({file_size} bytes > {MAX_FILE_SIZE}): {path}"
+                    f"图片文件过大 ({file_size} bytes > {MAX_FILE_SIZE}): {path_obj}"
                 )
                 return None
 
         # 使用异步方式读取文件，避免阻塞事件循环
         import aiofiles
 
-        async with aiofiles.open(path, mode="rb") as f:
+        async with aiofiles.open(path_str, mode="rb") as f:
             data = await f.read()
-        return base64.b64encode(data).decode("ascii")
+
+        result = base64.b64encode(data).decode("ascii")
+
+        # 如果是临时文件，清理它
+        if is_temp_file and path_obj.exists():
+            try:
+                os.remove(path_obj)
+                logger.debug(f"清理临时文件: {path_obj}")
+            except Exception as e:
+                logger.warning(f"清理临时文件失败: {path_obj}, {e}")
+
+        return result
     except Exception as e:
         logger.warning("Failed to convert image to base64: %s", e)
+        # 发生异常时也尝试清理临时文件
+        if is_temp_file and path_str:
+            try:
+                temp_path = Path(path_str)
+                if temp_path.exists():
+                    os.remove(temp_path)
+            except Exception:
+                pass
         return None
