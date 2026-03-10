@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+import inspect
 import platform
 import shutil
 import time
@@ -9,9 +10,9 @@ from pathlib import Path
 
 import psutil
 
+from astrbot.api import logger
 from astrbot.api.event import AstrMessageEvent
 from astrbot.api.star import Context
-from astrbot.api import logger
 
 from .models import Metric
 
@@ -27,7 +28,13 @@ class SystemDataSource:
         self._last_net_bytes_sent = 0
         self._last_net_bytes_recv = 0
         self._last_net_sample_ts = 0.0
-        self._process_start = dt.datetime.now()
+        # 使用系统启动时间作为 uptime 基准
+        try:
+            boot_time = psutil.boot_time()
+            self._system_start = dt.datetime.fromtimestamp(boot_time)
+        except Exception as e:
+            logger.debug(f"Failed to get system boot time: {e}, fallback to process start")
+            self._system_start = dt.datetime.now()
 
     def _truncate_text(self, text: str, max_length: int = 35) -> str:
         """如果文本超过最大长度，则截断并添加省略号"""
@@ -73,7 +80,7 @@ class SystemDataSource:
             ),
             Metric(
                 icon_class="icon-load",
-                label="PAYLOAD",
+                label="LOAD",
                 value=f"{load_pct:.1f}% / 100%",
                 offset=self._offset(load_pct),
             ),
@@ -94,7 +101,7 @@ class SystemDataSource:
         """在Linux上获取CPU名称"""
         try:
             # 尝试从/proc/cpuinfo读取
-            with open("/proc/cpuinfo", "r", encoding="utf-8") as f:
+            with open("/proc/cpuinfo", encoding="utf-8") as f:
                 for line in f:
                     if line.startswith("model name"):
                         return line.split(":", 1)[1].strip()
@@ -189,8 +196,8 @@ class SystemDataSource:
             return 0
         try:
             stars = getter()
-            # 处理异步返回的情况
-            if hasattr(stars, "__await__"):
+            # 处理异步返回的情况，使用 inspect.isawaitable 进行标准判定
+            if inspect.isawaitable(stars):
                 stars = await stars
             if not isinstance(stars, list):
                 return 0
@@ -224,8 +231,8 @@ class SystemDataSource:
             return 0.0, 0.0
 
     def get_uptime_text(self) -> str:
-        """获取运行时间文本"""
-        delta = dt.datetime.now() - self._process_start
+        """获取系统运行时间文本"""
+        delta = dt.datetime.now() - self._system_start
         total = int(delta.total_seconds())
         days, rem = divmod(total, 86400)
         hours, rem = divmod(rem, 3600)

@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import base64
 import ipaddress
+import socket
 from pathlib import Path
 from urllib.parse import urlparse
 
-from astrbot.core.utils.io import download_image_by_url
 from astrbot.api import logger
+from astrbot.core.utils.io import download_image_by_url
 
 # 最大文件读取大小: 5MB
 MAX_FILE_SIZE = 5 * 1024 * 1024
@@ -22,6 +23,20 @@ def _is_safe_path(path: Path, base_dir: Path) -> bool:
         return resolved_path.is_relative_to(resolved_base)
     except (OSError, ValueError):
         return False
+
+
+def _is_safe_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """检查 IP 地址是否安全（非内网、非链路本地等）"""
+    # 禁止私有地址、回环地址、保留地址、多播地址、链路本地地址
+    if (
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_reserved
+        or ip.is_multicast
+        or ip.is_link_local
+    ):
+        return False
+    return True
 
 
 def _is_safe_url(url: str) -> bool:
@@ -43,16 +58,34 @@ def _is_safe_url(url: str) -> bool:
         try:
             ip = ipaddress.ip_address(hostname)
             # 禁止内网地址
-            if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_multicast:
-                return False
+            return _is_safe_ip(ip)
         except ValueError:
-            # 不是 IP 地址，是域名
+            # 不是 IP 地址，是域名，需要解析检查
             pass
 
         # 禁止 localhost 相关域名
         blocked_hosts = {"localhost", "127.0.0.1", "0.0.0.0", "::1", "::"}
         if hostname in blocked_hosts or hostname.endswith(".localhost"):
             return False
+
+        # 解析域名并检查解析后的 IP 是否为内网地址
+        try:
+            # 获取所有解析结果
+            addr_info = socket.getaddrinfo(hostname, None)
+            for info in addr_info:
+                ip_str = info[4][0]
+                try:
+                    ip = ipaddress.ip_address(ip_str)
+                    if not _is_safe_ip(ip):
+                        logger.warning(f"域名 {hostname} 解析到不安全 IP: {ip}")
+                        return False
+                except ValueError:
+                    continue
+        except socket.gaierror:
+            # 域名解析失败，允许通过（可能在特定网络环境下可用）
+            pass
+        except Exception as e:
+            logger.debug(f"域名解析检查失败: {e}")
 
         return True
     except Exception:
@@ -129,8 +162,13 @@ def get_image_data_uri(
         return _placeholder_uri
 
 
-async def image_url_to_base64(image_url: str) -> str | None:
+async def image_url_to_base64(
+    image_url: str,
+    base_dir: Path,
+    plugin_data_dir: Path,
+) -> str | None:
     """图片URL转base64"""
+    path = ""
     try:
         if image_url.startswith("http"):
             # SSRF 安全检查
@@ -139,18 +177,32 @@ async def image_url_to_base64(image_url: str) -> str | None:
                 return None
             path = await download_image_by_url(image_url)
         else:
+            # 本地路径，需要安全检查
             path = image_url
+            path_obj = Path(path)
+            if path_obj.is_absolute():
+                # 绝对路径需要检查是否在允许的范围内
+                allowed_dirs = [base_dir.resolve(), plugin_data_dir.resolve()]
+                is_allowed = any(
+                    _is_safe_path(path_obj, allowed) for allowed in allowed_dirs
+                )
+                if not is_allowed:
+                    logger.warning(f"拒绝访问路径范围外的文件: {path}")
+                    return None
 
         # 检查文件大小，防止内存压力
         path_obj = Path(path)
         if path_obj.exists():
             file_size = path_obj.stat().st_size
             if file_size > MAX_FILE_SIZE:
-                logger.warning(f"图片文件过大 ({file_size} bytes > {MAX_FILE_SIZE}): {path}")
+                logger.warning(
+                    f"图片文件过大 ({file_size} bytes > {MAX_FILE_SIZE}): {path}"
+                )
                 return None
 
         # 使用异步方式读取文件，避免阻塞事件循环
         import aiofiles
+
         async with aiofiles.open(path, mode="rb") as f:
             data = await f.read()
         return base64.b64encode(data).decode("ascii")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import random
 from dataclasses import asdict
 from pathlib import Path
@@ -8,14 +9,17 @@ import mcp.types
 
 from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
-from astrbot.api.star import Context, Star, register
+from astrbot.api.star import Context, Star, StarTools
 from astrbot.core.exceptions import ProviderNotFoundError
 from astrbot.core.provider.register import llm_tools
-from astrbot.api.star import StarTools
 
 from .data_source import SystemDataSource
 from .models import StatusPayload
 from .utils import get_image_data_uri, image_url_to_base64, inline_fonts_in_css
+
+# 默认超时时间（秒）
+DEFAULT_TIMEOUT = 30
+LLM_TIMEOUT = 60
 
 
 
@@ -38,8 +42,17 @@ class StatusPlugin(Star):
             "scale": "device"
         }
         self.data_source = SystemDataSource(context, self.base_dir)
-        self.bot_name = config.get("bot_name")
-        self.banner_paths = config.get("banner_image")
+
+        # 配置值类型校验
+        bot_name = config.get("bot_name")
+        self.bot_name = bot_name if isinstance(bot_name, str) else "AstrBot"
+
+        banner_image = config.get("banner_image")
+        # 校验 banner_image 是否为字符串列表
+        if isinstance(banner_image, list) and all(isinstance(x, str) for x in banner_image):
+            self.banner_paths = banner_image
+        else:
+            self.banner_paths = []
 
     async def initialize(self) -> None:
         """Register LLM tool for Agent to fetch status image."""
@@ -64,20 +77,26 @@ class StatusPlugin(Star):
     async def _get_status_tool_handler(self, event: AstrMessageEvent) -> mcp.types.CallToolResult:
         """LLM tool handler: render status image and return as base64 for LLM to view."""
         try:
-            html_content, payload = await self._build_render_data(event)
-            payload_dict = asdict(payload)
-            image_url = await self.html_render(
-                html_content,
-                payload_dict,
-                return_url=True,
-                options=self.render_options,
+            async with asyncio.timeout(DEFAULT_TIMEOUT):
+                html_content, payload = await self._build_render_data(event)
+                payload_dict = asdict(payload)
+                image_url = await self.html_render(
+                    html_content,
+                    payload_dict,
+                    return_url=True,
+                    options=self.render_options,
+                )
+        except asyncio.TimeoutError:
+            logger.error("Status image render timed out in LLM tool")
+            return mcp.types.CallToolResult(
+                content=[mcp.types.TextContent(type="text", text="状态图片渲染超时。")]
             )
         except Exception:
             logger.exception("Status image render failed in LLM tool")
             return mcp.types.CallToolResult(
                 content=[mcp.types.TextContent(type="text", text="状态图片渲染失败。")]
             )
-        img_b64 = await image_url_to_base64(image_url)
+        img_b64 = await image_url_to_base64(image_url, self.base_dir, self.plugin_data_dir)
         if not img_b64:
             return mcp.types.CallToolResult(
                 content=[mcp.types.TextContent(type="text", text="无法获取状态图片数据。")]
@@ -120,13 +139,16 @@ class StatusPlugin(Star):
                     "llm_analysis_prompt",
                     "请简要分析这张系统状态图片，用一两句话总结 CPU、内存、磁盘等关键信息。",
                 )
-                llm_resp = await self.context.llm_generate(
-                    chat_provider_id=prov_id,
-                    prompt=prompt,
-                    image_urls=[image_url],
-                )
+                async with asyncio.timeout(LLM_TIMEOUT):
+                    llm_resp = await self.context.llm_generate(
+                        chat_provider_id=prov_id,
+                        prompt=prompt,
+                        image_urls=[image_url],
+                    )
                 if llm_resp and llm_resp.completion_text:
                     yield event.plain_result(llm_resp.completion_text)
+            except asyncio.TimeoutError:
+                logger.warning("LLM analysis timed out")
             except ProviderNotFoundError:
                 logger.debug("No chat provider configured, skip LLM analysis")
             except Exception:
