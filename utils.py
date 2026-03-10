@@ -41,60 +41,6 @@ def _is_safe_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     return True
 
 
-async def _is_safe_url(url: str) -> bool:
-    """检查 URL 是否安全，防止 SSRF 攻击"""
-    try:
-        parsed = urlparse(url)
-        # 只允许 http 和 https 协议
-        if parsed.scheme not in ("http", "https"):
-            return False
-
-        # 检查主机名是否为空
-        if not parsed.hostname:
-            return False
-
-        # 禁止访问内网地址
-        hostname = parsed.hostname.lower()
-
-        # 检查是否是 IP 地址
-        try:
-            ip = ipaddress.ip_address(hostname)
-            # 禁止内网地址
-            return _is_safe_ip(ip)
-        except ValueError:
-            # 不是 IP 地址，是域名，需要解析检查
-            pass
-
-        # 禁止 localhost 相关域名
-        blocked_hosts = {"localhost", "127.0.0.1", "0.0.0.0", "::1", "::"}
-        if hostname in blocked_hosts or hostname.endswith(".localhost"):
-            return False
-
-        # 异步解析域名并检查解析后的 IP 是否为内网地址
-        try:
-            # 获取事件循环并使用异步的 getaddrinfo
-            loop = asyncio.get_event_loop()
-            addr_info = await loop.getaddrinfo(hostname, None)
-            for info in addr_info:
-                ip_str = info[4][0]
-                try:
-                    ip = ipaddress.ip_address(ip_str)
-                    if not _is_safe_ip(ip):
-                        logger.warning(f"域名 {hostname} 解析到不安全 IP: {ip}")
-                        return False
-                except ValueError:
-                    continue
-        except socket.gaierror:
-            # 域名解析失败，允许通过（可能在特定网络环境下可用）
-            pass
-        except Exception as e:
-            logger.debug(f"域名解析检查失败: {e}")
-
-        return True
-    except Exception:
-        return False
-
-
 def inline_fonts_in_css(css: str, base_dir: Path) -> str:
     """通过 base64 URL 替换字体相对资源路径"""
     font_dir = base_dir / "templates" / "res" / "fonts"
@@ -182,10 +128,6 @@ async def image_url_to_base64(
         path_obj = Path(image_url).resolve()
 
         if image_url.startswith("http"):
-            # SSRF 安全检查
-            if not await _is_safe_url(image_url):
-                logger.warning(f"拒绝访问不安全的 URL: {image_url}")
-                return None
             path_str = await download_image_by_url(image_url)
             is_temp_file = True
             # 对下载的文件也进行 resolve，确保一致性
