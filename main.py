@@ -22,7 +22,7 @@ class StatusPlugin(Star):
     一个用于渲染系统状态卡的插件。
     """
     def __init__(self, context: Context, config: AstrBotConfig):
-        super().__init__(context, config)
+        super().__init__(context)
         self.base_dir = Path(__file__).parent
         self.config = config
         self.context = context
@@ -38,7 +38,7 @@ class StatusPlugin(Star):
         }
         self.data_source = SystemDataSource(context, self.base_dir)
         self.bot_name = config.get("bot_name")
-        self.banner_paths = config.get("banner_image", [])
+        self.banner_paths = config.get("banner_image")
 
     async def initialize(self) -> None:
         """Register LLM tool for Agent to fetch status image."""
@@ -109,7 +109,7 @@ class StatusPlugin(Star):
             return
         yield event.image_result(image_url)
 
-        enable_llm = self.config.get("enable_llm_analysis", False)
+        enable_llm: bool = self.config.get("enable_llm_analysis")
         if enable_llm:
             try:
                 prov_id = await self.context.get_current_chat_provider_id(
