@@ -8,7 +8,7 @@ import mcp.types
 
 from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
-from astrbot.api.star import Context, Star,register
+from astrbot.api.star import Context, Star, register
 from astrbot.core.exceptions import ProviderNotFoundError
 from astrbot.core.provider.register import llm_tools
 from astrbot.api.star import StarTools
@@ -16,6 +16,8 @@ from astrbot.api.star import StarTools
 from .data_source import SystemDataSource
 from .models import StatusPayload
 from .utils import get_image_data_uri, image_url_to_base64, inline_fonts_in_css
+
+
 
 class StatusPlugin(Star):
     """
@@ -25,7 +27,6 @@ class StatusPlugin(Star):
         super().__init__(context)
         self.base_dir = Path(__file__).parent
         self.config = config
-        self.context = context
         self.plugin_data_dir = StarTools.get_data_dir(self.name)
         self.template_path = self.base_dir / "templates" / "main.html"
         self.css_path = self.base_dir / "templates" / "res" / "css" / "style.css"
@@ -162,7 +163,7 @@ class StatusPlugin(Star):
         inlined_css = f"<style>{css}</style>"
 
         upload_kbs, download_kbs = self.data_source.get_net_speed_kbs()
-        plugin_count_str = str(self.data_source.get_plugin_counts())
+        plugin_count_str = str(await self.data_source.get_plugin_counts())
 
         payload = StatusPayload(
             css_style=inlined_css,

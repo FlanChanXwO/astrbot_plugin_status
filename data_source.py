@@ -156,7 +156,7 @@ class SystemDataSource:
         os_name = f"{platform.system()} {platform.release()}"
         return self._truncate_text(os_name)
 
-    def get_project_version(self, event: AstrMessageEvent) -> str:
+    def get_project_version(self, _event: AstrMessageEvent) -> str:
         """获取AstrBot项目版本"""
         try:
             # 尝试从astrbot获取版本
@@ -182,13 +182,16 @@ class SystemDataSource:
 
         return "AstrBot"
 
-    def get_plugin_counts(self) -> int:
+    async def get_plugin_counts(self) -> int:
         """获取插件的数量"""
         getter = getattr(self.context, "get_all_stars", None)
         if not callable(getter):
             return 0
         try:
             stars = getter()
+            # 处理异步返回的情况
+            if hasattr(stars, "__await__"):
+                stars = await stars
             if not isinstance(stars, list):
                 return 0
             return len(stars)
@@ -198,9 +201,6 @@ class SystemDataSource:
 
     def get_net_speed_kbs(self) -> tuple[float, float]:
         """获取上传和下载速度 (KB/s)"""
-        if psutil is None:
-            return 0.0, 0.0
-
         now = time.monotonic()
         try:
             io = psutil.net_io_counters()
@@ -235,8 +235,6 @@ class SystemDataSource:
         return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
     def _cpu_display(self, cpu_pct: float) -> str:
-        if psutil is None:
-            return f"{cpu_pct:.1f}%"
         try:
             freq = psutil.cpu_freq()
             cores = psutil.cpu_count() or 1
@@ -252,8 +250,6 @@ class SystemDataSource:
             return f"{cpu_pct:.1f}%"
 
     def _cpu_percent(self) -> float:
-        if psutil is None:
-            return 0.0
         try:
             return float(psutil.cpu_percent(interval=None))
         except Exception as e:
@@ -261,8 +257,6 @@ class SystemDataSource:
             return 0.0
 
     def _memory_usage(self) -> tuple[float, float, float]:
-        if psutil is None:
-            return 0.0, 0.0, 0.0
         try:
             vm = psutil.virtual_memory()
             used = (vm.total - vm.available) / (1024 ** 3)
@@ -273,8 +267,6 @@ class SystemDataSource:
             return 0.0, 0.0, 0.0
 
     def _swap_usage(self) -> tuple[float, float, float]:
-        if psutil is None:
-            return 0.0, 0.0, 0.0
         try:
             sm = psutil.swap_memory()
             used = sm.used / (1024 ** 3)
@@ -297,8 +289,6 @@ class SystemDataSource:
             return 0.0, 0.0, 0.0
 
     def _load_percent(self, cpu_pct: float) -> float:
-        if psutil is None:
-            return cpu_pct
         try:
             la1, _, _ = psutil.getloadavg()
             cpu_count = psutil.cpu_count() or 1
