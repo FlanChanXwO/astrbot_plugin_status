@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import asyncio
 import base64
 import ipaddress
 import os
-import socket
 from pathlib import Path
-from urllib.parse import urlparse
 
 from astrbot.api import logger
 from astrbot.core.utils.io import download_image_by_url
