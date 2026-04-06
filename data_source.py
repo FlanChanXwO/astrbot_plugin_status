@@ -33,7 +33,9 @@ class SystemDataSource:
             boot_time = psutil.boot_time()
             self._system_start = dt.datetime.fromtimestamp(boot_time)
         except Exception as e:
-            logger.debug(f"Failed to get system boot time: {e}, fallback to process start")
+            logger.debug(
+                f"Failed to get system boot time: {e}, fallback to process start"
+            )
             self._system_start = dt.datetime.now()
 
     def _truncate_text(self, text: str, max_length: int = 35) -> str:
@@ -117,7 +119,11 @@ class SystemDataSource:
         proc = None
         try:
             proc = await asyncio.create_subprocess_exec(
-                "wmic", "cpu", "get", "Name", "/value",
+                "wmic",
+                "cpu",
+                "get",
+                "Name",
+                "/value",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -175,6 +181,7 @@ class SystemDataSource:
         try:
             # 尝试从astrbot获取版本
             from astrbot import __version__ as astr_ver
+
             if astr_ver:
                 return f"AstrBot v{astr_ver}"
         except ImportError:
@@ -182,6 +189,7 @@ class SystemDataSource:
 
         try:
             from astrbot.cli import __version__ as cli_ver
+
             if cli_ver:
                 return f"AstrBot v{cli_ver}"
         except ImportError:
@@ -189,6 +197,7 @@ class SystemDataSource:
 
         try:
             from astrbot.core import __version__ as core_ver
+
             if core_ver:
                 return f"AstrBot v{core_ver}"
         except ImportError:
@@ -273,8 +282,8 @@ class SystemDataSource:
     def _memory_usage(self) -> tuple[float, float, float]:
         try:
             vm = psutil.virtual_memory()
-            used = (vm.total - vm.available) / (1024 ** 3)
-            total = vm.total / (1024 ** 3)
+            used = (vm.total - vm.available) / (1024**3)
+            total = vm.total / (1024**3)
             return used, total, float(vm.percent)
         except Exception as e:
             logger.debug(f"Failed to get memory usage: {e}")
@@ -283,8 +292,8 @@ class SystemDataSource:
     def _swap_usage(self) -> tuple[float, float, float]:
         try:
             sm = psutil.swap_memory()
-            used = sm.used / (1024 ** 3)
-            total = sm.total / (1024 ** 3)
+            used = sm.used / (1024**3)
+            total = sm.total / (1024**3)
             pct = float(sm.percent if sm.total else 0.0)
             return used, total, pct
         except Exception as e:
@@ -294,8 +303,8 @@ class SystemDataSource:
     def _disk_usage(self) -> tuple[float, float, float]:
         try:
             du = shutil.disk_usage(str(Path.cwd()))
-            used = du.used / (1024 ** 3)
-            total = du.total / (1024 ** 3)
+            used = du.used / (1024**3)
+            total = du.total / (1024**3)
             pct = (used / total) * 100 if total else 0.0
             return used, total, pct
         except Exception as e:

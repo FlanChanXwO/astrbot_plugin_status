@@ -8,6 +8,7 @@ class Metric:
     """
     单个指标的数据模型
     """
+
     icon_class: str  # 指标图标的CSS类
     label: str  # 指标名称
     value: str  # 指标值
@@ -19,6 +20,7 @@ class StatusPayload:
     """
     状态页面渲染所需的数据
     """
+
     css_style: str  # 内联的CSS样式
     bot_name: str  # 机器人名称
     metrics: list[Metric]  # 指标列表
