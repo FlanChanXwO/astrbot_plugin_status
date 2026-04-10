@@ -98,6 +98,13 @@
 
 ## 📝 使用方法
 
+> [!IMPORTANT]
+> **关于 T2I 渲染服务**
+>
+> 本插件依赖 AstrBot 的 T2I（HTML 转图片）功能生成状态卡片。由于公共 T2I 服务的节点在国外，第三方公共 T2I 服务通常有请求大小限制或 SSL 连接问题，**强烈建议自建 T2I 服务**以获得最佳体验。
+>
+> - 自部署文档：[AstrBot T2I 服务部署指南](https://docs.astrbot.app/others/self-host-t2i.html)
+
 ### 基础命令
 
 发送以下任一指令即可获取系统状态卡片：

@@ -28,17 +28,17 @@ class SystemDataSource:
         self._last_net_bytes_sent = 0
         self._last_net_bytes_recv = 0
         self._last_net_sample_ts = 0.0
-        # 使用系统启动时间作为 uptime 基准
         try:
-            boot_time = psutil.boot_time()
-            self._system_start = dt.datetime.fromtimestamp(boot_time)
+            import os
+
+            process = psutil.Process(os.getpid())
+            self._system_start = dt.datetime.fromtimestamp(process.create_time())
         except Exception as e:
-            logger.debug(
-                f"Failed to get system boot time: {e}, fallback to process start"
-            )
+            logger.debug(f"Failed to get process start time: {e}, fallback to now")
             self._system_start = dt.datetime.now()
 
-    def _truncate_text(self, text: str, max_length: int = 35) -> str:
+    @staticmethod
+    def _truncate_text(text: str, max_length: int = 35) -> str:
         """如果文本超过最大长度，则截断并添加省略号"""
         if len(text) > max_length:
             return text[:max_length] + "..."
@@ -152,7 +152,8 @@ class SystemDataSource:
 
         return self._get_cpu_name_generic()
 
-    def _get_cpu_name_generic(self) -> str:
+    @staticmethod
+    def _get_cpu_name_generic() -> str:
         """通用方式获取CPU名称（使用psutil或platform）"""
         # 尝试用psutil
         try:

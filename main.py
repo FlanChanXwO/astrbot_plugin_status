@@ -11,6 +11,7 @@ from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, StarTools
 from astrbot.core.exceptions import ProviderNotFoundError
+from astrbot.core.message.message_event_result import MessageChain
 from astrbot.core.provider.register import llm_tools
 
 from .data_source import SystemDataSource
@@ -106,6 +107,15 @@ class StatusPlugin(Star):
                 content=[
                     mcp.types.TextContent(type="text", text="无法获取状态图片数据。")
                 ]
+            )
+        try:
+            await StarTools.send_message(
+                session=event.session, message_chain=MessageChain().url_image(image_url)
+            )
+            logger.info("Status image sent to user via StarTools.send_message()")
+        except Exception as e:
+            logger.warning(
+                f"Failed to send image via StarTools.send_message() to session {event.session}: {e}"
             )
         return mcp.types.CallToolResult(
             content=[
