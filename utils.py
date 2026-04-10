@@ -39,34 +39,37 @@ def _is_safe_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
 
 
 def inline_fonts_in_css(css: str, base_dir: Path) -> str:
-    """通过 base64 URL 替换字体相对资源路径"""
+    """通过 base64 URL 替换字体相对资源路径
+
+    动态扫描 fonts 目录下的字体文件，自动识别格式并内联到 CSS 中。
+    支持的格式：woff2, ttf
+    """
     font_dir = base_dir / "templates" / "res" / "fonts"
     if not font_dir.is_dir():
         return css
 
-    # 支持 woff2 (优先) 和 ttf (后备)
-    font_files = [
-        ("baotu.woff2", "font/woff2"),
-        ("baotu.ttf", "font/ttf"),
-        ("ADLaM-Display-Regular.ttf", "font/ttf"),
-        ("Spicy-Rice-Regular.ttf", "font/ttf"),
-        ("DingTalk-JinBuTi.ttf", "font/ttf"),
-        ("Ma-Shan-Zheng-Regular.ttf", "font/ttf"),
-        ("Noto-Sans-SC-Regular.ttf", "font/ttf"),
-        ("Noto-Sans-SC-Bold.ttf", "font/ttf"),
-    ]
+    # MIME 类型映射
+    mime_types = {
+        ".woff2": "font/woff2",
+        ".ttf": "font/ttf",
+    }
 
-    for filename, mime_type in font_files:
-        path = font_dir / filename
-        if not path.is_file():
+    # 扫描字体目录，按文件名排序确保一致性
+    font_files = sorted(
+        [f for f in font_dir.iterdir() if f.is_file() and f.suffix.lower() in mime_types]
+    )
+
+    for font_path in font_files:
+        mime_type = mime_types.get(font_path.suffix.lower())
+        if not mime_type:
             continue
         try:
-            data_uri = f"data:{mime_type};base64,{base64.b64encode(path.read_bytes()).decode('ascii')}"
+            data_uri = f"data:{mime_type};base64,{base64.b64encode(font_path.read_bytes()).decode('ascii')}"
         except Exception as e:
-            logger.warning("Failed to inline font %s: %s", filename, e)
+            logger.warning("Failed to inline font %s: %s", font_path.name, e)
             continue
         # 替换 url('../fonts/xxx.ttf')
-        old_url = f"url('../fonts/{filename}')"
+        old_url = f"url('../fonts/{font_path.name}')"
         css = css.replace(old_url, f"url('{data_uri}')")
     return css
 

@@ -11,7 +11,7 @@
 - **T2I 渲染性能优化**：通过将 Google Fonts 内联为 base64 Data URI 消除外部网络依赖，移除渲染时的 CDN 请求
 - **图片优化**：将所有横幅和角色图片转换为 WebP 格式以减小文件体积
 - **字体优化**：
-  - `baotu.ttf`：保持完整原始字体 (6MB) 以确保任意中英文 bot_name 的 100% 字符覆盖
+  - `baotu.ttf`：压缩一半的字体大小，以确保常用的字体都可以使用
   - 其他字体 (`DingTalk-JinBuTi.ttf`, `Ma-Shan-Zheng-Regular.ttf`, `Noto-Sans-SC-*.ttf`, `Spicy-Rice-Regular.ttf`, `ADLaM-Display-Regular.ttf`)：通过子集化优化减小体积
 
 ### Added
