@@ -96,7 +96,9 @@ def get_image_data_uri(
         # 检查文件大小，防止内存压力
         file_size = path.stat().st_size
         if file_size > MAX_FILE_SIZE:
-            logger.warning(f"图片文件过大 ({file_size} bytes > {MAX_FILE_SIZE}): {path}")
+            logger.warning(
+                f"图片文件过大 ({file_size} bytes > {MAX_FILE_SIZE}): {path}"
+            )
             return _placeholder_uri
 
         suffix = path.suffix.lower().lstrip(".") or "png"
