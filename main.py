@@ -24,11 +24,11 @@ DEFAULT_TIMEOUT = 30
 LLM_TIMEOUT = 60
 
 
-
 class StatusPlugin(Star):
     """
     一个用于渲染系统状态卡的插件。
     """
+
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
         self.base_dir = Path(__file__).parent
@@ -37,12 +37,10 @@ class StatusPlugin(Star):
         self.template_path = self.base_dir / "templates" / "main.html"
         self.css_path = self.base_dir / "templates" / "res" / "css" / "style.css"
         self.character_dir = self.base_dir / "templates" / "res" / "image" / "character"
-        self.default_banner_dir = self.base_dir / "templates" / "res" / "image" / "banner"
-        self.render_options = {
-            "full_page": True,
-            "type": "png",
-            "scale": "device"
-        }
+        self.default_banner_dir = (
+            self.base_dir / "templates" / "res" / "image" / "banner"
+        )
+        self.render_options = {"full_page": True, "type": "png", "scale": "device"}
         self.data_source = SystemDataSource(context, self.base_dir)
 
         # 配置值类型校验
@@ -51,7 +49,9 @@ class StatusPlugin(Star):
 
         banner_image = config.get("banner_image")
         # 校验 banner_image 是否为字符串列表
-        if isinstance(banner_image, list) and all(isinstance(x, str) for x in banner_image):
+        if isinstance(banner_image, list) and all(
+            isinstance(x, str) for x in banner_image
+        ):
             self.banner_paths = banner_image
         else:
             self.banner_paths = []
@@ -76,7 +76,9 @@ class StatusPlugin(Star):
         """Unregister LLM tool on plugin disable."""
         llm_tools.remove_func("astrbot_get_system_status")
 
-    async def _get_status_tool_handler(self, event: AstrMessageEvent) -> mcp.types.CallToolResult:
+    async def _get_status_tool_handler(
+        self, event: AstrMessageEvent
+    ) -> mcp.types.CallToolResult:
         """LLM tool handler: render status image and return as base64 for LLM to view."""
         try:
             async with asyncio.timeout(DEFAULT_TIMEOUT):
@@ -98,10 +100,14 @@ class StatusPlugin(Star):
             return mcp.types.CallToolResult(
                 content=[mcp.types.TextContent(type="text", text="状态图片渲染失败。")]
             )
-        img_b64 = await image_url_to_base64(image_url, self.base_dir, self.plugin_data_dir)
+        img_b64 = await image_url_to_base64(
+            image_url, self.base_dir, self.plugin_data_dir
+        )
         if not img_b64:
             return mcp.types.CallToolResult(
-                content=[mcp.types.TextContent(type="text", text="无法获取状态图片数据。")]
+                content=[
+                    mcp.types.TextContent(type="text", text="无法获取状态图片数据。")
+                ]
             )
         try:
             await StarTools.send_message(session=event.session, message_chain=MessageChain().url_image(image_url))
@@ -118,7 +124,7 @@ class StatusPlugin(Star):
             ]
         )
 
-    @filter.command("status",alias={"状态"})
+    @filter.command("status", alias={"状态"})
     async def show_status(self, event: AstrMessageEvent):
         """返回状态图片"""
         try:
@@ -164,26 +170,46 @@ class StatusPlugin(Star):
             except Exception:
                 logger.exception("LLM analysis failed")
 
-    async def _build_render_data(self, event: AstrMessageEvent) -> tuple[str, StatusPayload]:
+    async def _build_render_data(
+        self, event: AstrMessageEvent
+    ) -> tuple[str, StatusPayload]:
         """为渲染构建模板和负载数据。"""
         html = self.template_path.read_text(encoding="utf-8-sig")
         banner_uri = ""
         if self.banner_paths and isinstance(self.banner_paths, list):
             chosen_path_str = random.choice(self.banner_paths)
             logger.info(f"尝试使用自定义 Banner: {chosen_path_str}")
-            banner_uri = get_image_data_uri(chosen_path_str, self.base_dir, self.plugin_data_dir, is_user_path=True)
+            banner_uri = get_image_data_uri(
+                chosen_path_str, self.base_dir, self.plugin_data_dir, is_user_path=True
+            )
 
         if not banner_uri:
             if self.default_banner_dir.exists():
-                default_banners = [p for p in self.default_banner_dir.iterdir() if p.is_file()]
+                default_banners = [
+                    p for p in self.default_banner_dir.iterdir() if p.is_file()
+                ]
                 if default_banners:
                     chosen_default_path = random.choice(default_banners)
-                    logger.info(f"使用默认 Banner: {chosen_default_path.relative_to(self.base_dir)}")
-                    banner_uri = get_image_data_uri(chosen_default_path.relative_to(self.base_dir), self.base_dir, self.plugin_data_dir)
+                    logger.info(
+                        f"使用默认 Banner: {chosen_default_path.relative_to(self.base_dir)}"
+                    )
+                    banner_uri = get_image_data_uri(
+                        chosen_default_path.relative_to(self.base_dir),
+                        self.base_dir,
+                        self.plugin_data_dir,
+                    )
 
-        char_files = [p for p in self.character_dir.iterdir() if p.is_file()] if self.character_dir.exists() else []
+        char_files = (
+            [p for p in self.character_dir.iterdir() if p.is_file()]
+            if self.character_dir.exists()
+            else []
+        )
         if char_files:
-            character_uri = get_image_data_uri(random.choice(char_files).relative_to(self.base_dir), self.base_dir, self.plugin_data_dir)
+            character_uri = get_image_data_uri(
+                random.choice(char_files).relative_to(self.base_dir),
+                self.base_dir,
+                self.plugin_data_dir,
+            )
         else:
             character_uri = ""
 
