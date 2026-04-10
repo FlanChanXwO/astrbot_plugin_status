@@ -11,12 +11,11 @@ from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, StarTools
 from astrbot.core.exceptions import ProviderNotFoundError
-from astrbot.core.message.message_event_result import MessageChain
 from astrbot.core.provider.register import llm_tools
 
 from .data_source import SystemDataSource
 from .models import StatusPayload
-from .utils import get_image_data_uri, image_url_to_base64, inline_fonts_in_css
+from .utils import get_image_data_uri, inline_fonts_in_css
 
 # 默认超时时间（秒）
 DEFAULT_TIMEOUT = 30
@@ -78,54 +77,57 @@ class StatusPlugin(Star):
     async def _get_status_tool_handler(
         self, event: AstrMessageEvent
     ) -> mcp.types.CallToolResult:
-        """LLM tool handler: render status image and return as base64 for LLM to view."""
+        """LLM tool handler: 返回系统状态指标文本信息。"""
         try:
-            async with asyncio.timeout(DEFAULT_TIMEOUT):
-                html_content, payload = await self._build_render_data(event)
-                payload_dict = asdict(payload)
-                image_url = await self.html_render(
-                    html_content,
-                    payload_dict,
-                    return_url=True,
-                    options=self.render_options,
-                )
-        except asyncio.TimeoutError:
-            logger.error("Status image render timed out in LLM tool")
+            from datetime import datetime
+
+            # 获取系统指标
+            metrics = self.data_source.get_metrics()
+            cpu_name = await self.data_source.get_cpu_name()
+            os_name = self.data_source.get_os_name()
+            project_version = self.data_source.get_project_version(event)
+            plugin_count = await self.data_source.get_plugin_counts()
+            upload_kbs, download_kbs = self.data_source.get_net_speed_kbs()
+            uptime = self.data_source.get_uptime_text()
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            # 构建指标映射
+            metrics_map = {m.label: m.value for m in metrics}
+
+            status_text = f"""\
+系统状态信息
+================
+机器人名称: {self.bot_name}
+当前时间: {current_time}
+框架版本: {project_version}
+运行时间: {uptime}
+
+系统信息
+--------
+操作系统: {os_name}
+CPU: {cpu_name}
+
+资源使用
+--------
+CPU: {metrics_map.get('CPU', 'N/A')}
+内存: {metrics_map.get('RAM', 'N/A')}
+交换: {metrics_map.get('SWAP', 'N/A')}
+磁盘: {metrics_map.get('DISK', 'N/A')}
+负载: {metrics_map.get('LOAD', 'N/A')}
+
+网络与插件
+----------
+网络速度: ↑{upload_kbs:.1f} KB/s ↓{download_kbs:.1f} KB/s
+已加载插件: {plugin_count} 个"""
+
             return mcp.types.CallToolResult(
-                content=[mcp.types.TextContent(type="text", text="状态图片渲染超时。")]
+                content=[mcp.types.TextContent(type="text", text=status_text)]
             )
         except Exception:
-            logger.exception("Status image render failed in LLM tool")
+            logger.exception("获取系统状态信息失败")
             return mcp.types.CallToolResult(
-                content=[mcp.types.TextContent(type="text", text="状态图片渲染失败。")]
+                content=[mcp.types.TextContent(type="text", text="获取系统状态信息失败。")]
             )
-        img_b64 = await image_url_to_base64(
-            image_url, self.base_dir, self.plugin_data_dir
-        )
-        if not img_b64:
-            return mcp.types.CallToolResult(
-                content=[
-                    mcp.types.TextContent(type="text", text="无法获取状态图片数据。")
-                ]
-            )
-        try:
-            await StarTools.send_message(
-                session=event.session, message_chain=MessageChain().url_image(image_url)
-            )
-            logger.info("Status image sent to user via StarTools.send_message()")
-        except Exception as e:
-            logger.warning(
-                f"Failed to send image via StarTools.send_message() to session {event.session}: {e}"
-            )
-        return mcp.types.CallToolResult(
-            content=[
-                mcp.types.ImageContent(
-                    type="image",
-                    data=img_b64,
-                    mimeType="image/png",
-                )
-            ]
-        )
 
     @filter.command("status", alias={"状态"})
     async def show_status(self, event: AstrMessageEvent):

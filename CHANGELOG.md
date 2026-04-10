@@ -6,9 +6,10 @@
 
 - 修复运行时间显示为系统启动时间而非 AstrBot 进程运行时间的问题，改用 `psutil.Process(os.getpid()).create_time()` (data_source.py:34)
 - 修复llm调用不会自行发送状态图片的问题
-   
+
 ### Changed
 
+- **LLM调用返回结果优化**：现在LLM结果兼容非多模态模型，且不再需要依赖于tool工具的调用图片缓存
 - **T2I 渲染性能优化**：通过将 Google Fonts 内联为 base64 Data URI 消除外部网络依赖，移除渲染时的 CDN 请求
 - **图片优化**：将所有横幅和角色图片转换为 WebP 格式以减小文件体积
 - **字体优化**：
