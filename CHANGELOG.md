@@ -5,7 +5,8 @@
 ### Fixed
 
 - 修复运行时间显示为系统启动时间而非 AstrBot 进程运行时间的问题，改用 `psutil.Process(os.getpid()).create_time()` (data_source.py:34)
-
+- 修复llm调用不会自行发送状态图片的问题
+   
 ### Changed
 
 - **T2I 渲染性能优化**：通过将 Google Fonts 内联为 base64 Data URI 消除外部网络依赖，移除渲染时的 CDN 请求
