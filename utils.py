@@ -43,21 +43,29 @@ def inline_fonts_in_css(css: str, base_dir: Path) -> str:
     font_dir = base_dir / "templates" / "res" / "fonts"
     if not font_dir.is_dir():
         return css
+
+    # 支持 woff2 (优先) 和 ttf (后备)
     font_files = [
-        "baotu.ttf",
-        "ADLaMDisplay-Regular.ttf",
-        "SpicyRice-Regular.ttf",
-        "DingTalk-JinBuTi.ttf",
+        ("baotu.woff2", "font/woff2"),
+        ("baotu.ttf", "font/ttf"),
+        ("ADLaM-Display-Regular.ttf", "font/ttf"),
+        ("Spicy-Rice-Regular.ttf", "font/ttf"),
+        ("DingTalk-JinBuTi.ttf", "font/ttf"),
+        ("Ma-Shan-Zheng-Regular.ttf", "font/ttf"),
+        ("Noto-Sans-SC-Regular.ttf", "font/ttf"),
+        ("Noto-Sans-SC-Bold.ttf", "font/ttf"),
     ]
-    for filename in font_files:
+
+    for filename, mime_type in font_files:
         path = font_dir / filename
         if not path.is_file():
             continue
         try:
-            data_uri = f"data:font/ttf;base64,{base64.b64encode(path.read_bytes()).decode('ascii')}"
+            data_uri = f"data:{mime_type};base64,{base64.b64encode(path.read_bytes()).decode('ascii')}"
         except Exception as e:
             logger.warning("Failed to inline font %s: %s", filename, e)
             continue
+        # 替换 url('../fonts/xxx.ttf')
         old_url = f"url('../fonts/{filename}')"
         css = css.replace(old_url, f"url('{data_uri}')")
     return css
@@ -100,7 +108,12 @@ def get_image_data_uri(
             return _placeholder_uri
 
         suffix = path.suffix.lower().lstrip(".") or "png"
-        mime = "jpeg" if suffix in {"jpg", "jpeg"} else "png"
+        if suffix in {"jpg", "jpeg"}:
+            mime = "jpeg"
+        elif suffix == "webp":
+            mime = "webp"
+        else:
+            mime = "png"
         encoded_data = base64.b64encode(path.read_bytes()).decode("ascii")
         return f"data:image/{mime};base64,{encoded_data}"
     except Exception as e:

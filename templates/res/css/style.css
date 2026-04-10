@@ -1,7 +1,8 @@
 /* Local fonts: url() replaced with data URI at runtime when font files exist under templates/res/fonts/ */
 @font-face {
     font-family: 'baotuxiaobaiti';
-    src: url('../fonts/baotu.ttf') format('truetype');
+    src: url('../fonts/baotu.woff2') format('woff2'),
+         url('../fonts/baotu.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
 }
@@ -13,7 +14,41 @@
     font-style: normal;
 }
 
-/* ADLaM Display and Spicy Rice loaded via Google Fonts in HTML; use these family names */
+/* Google Fonts - 本地版本 */
+@font-face {
+    font-family: 'ADLaM Display';
+    src: url('../fonts/ADLaM-Display-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Spicy Rice';
+    src: url('../fonts/Spicy-Rice-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Ma Shan Zheng';
+    src: url('../fonts/Ma-Shan-Zheng-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Noto Sans SC';
+    src: url('../fonts/Noto-Sans-SC-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Noto Sans SC';
+    src: url('../fonts/Noto-Sans-SC-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
 
 /* --- 全局和基础样式 --- */
 html,
