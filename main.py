@@ -77,11 +77,33 @@ class StatusPlugin(Star):
     async def _get_status_tool_handler(
         self, event: AstrMessageEvent
     ) -> mcp.types.CallToolResult:
-        """LLM tool handler: 返回系统状态指标文本信息。"""
-        try:
-            from datetime import datetime
+        """LLM tool handler: 返回系统状态指标文本信息，同时发送图片给用户。"""
+        from datetime import datetime
 
-            # 获取系统指标
+        # 先尝试渲染图片发送给用户
+        image_url = None
+        try:
+            html_content, payload = await self._build_render_data(event)
+            payload_dict = asdict(payload)
+            image_url = await self.html_render(
+                html_content,
+                payload_dict,
+                return_url=True,
+                options=self.render_options,
+            )
+            # 发送图片给用户
+            try:
+                await StarTools.send_message(
+                    session=event.session, message_chain=MessageChain().url_image(image_url)
+                )
+                logger.info("Status image sent to user via StarTools.send_message()")
+            except Exception as e:
+                logger.warning(f"Failed to send image via StarTools.send_message() to session {event.session}: {e}")
+        except Exception as e:
+            logger.warning(f"Failed to render status image: {e}")
+
+        # 构建并返回文本指标给 LLM
+        try:
             metrics = self.data_source.get_metrics()
             cpu_name = await self.data_source.get_cpu_name()
             os_name = self.data_source.get_os_name()
@@ -91,7 +113,6 @@ class StatusPlugin(Star):
             uptime = self.data_source.get_uptime_text()
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            # 构建指标映射
             metrics_map = {m.label: m.value for m in metrics}
 
             status_text = f"""\
