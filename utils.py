@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import ipaddress
 import os
 from pathlib import Path
@@ -38,8 +39,27 @@ def _is_safe_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
 
 
 def inline_fonts_in_css(css: str, base_dir: Path) -> str:
-    """字体已通过 CDN 链接直接写入 CSS，此函数保留用于兼容性"""
-    # 字体现使用 CDN 链接，无需 base64 内联，避免请求体过大 (>10MB -> ~50KB)
+    """通过 base64 URL 替换字体相对资源路径"""
+    font_dir = base_dir / "templates" / "res" / "fonts"
+    if not font_dir.is_dir():
+        return css
+    font_files = [
+        "baotu.ttf",
+        "ADLaMDisplay-Regular.ttf",
+        "SpicyRice-Regular.ttf",
+        "DingTalk-JinBuTi.ttf",
+    ]
+    for filename in font_files:
+        path = font_dir / filename
+        if not path.is_file():
+            continue
+        try:
+            data_uri = f"data:font/ttf;base64,{base64.b64encode(path.read_bytes()).decode('ascii')}"
+        except Exception as e:
+            logger.warning("Failed to inline font %s: %s", filename, e)
+            continue
+        old_url = f"url('../fonts/{filename}')"
+        css = css.replace(old_url, f"url('{data_uri}')")
     return css
 
 
@@ -78,8 +98,6 @@ def get_image_data_uri(
         if file_size > MAX_FILE_SIZE:
             logger.warning(f"图片文件过大 ({file_size} bytes > {MAX_FILE_SIZE}): {path}")
             return _placeholder_uri
-
-        import base64
 
         suffix = path.suffix.lower().lstrip(".") or "png"
         mime = "jpeg" if suffix in {"jpg", "jpeg"} else "png"
@@ -137,8 +155,6 @@ async def image_url_to_base64(
 
         async with aiofiles.open(path_str, mode="rb") as f:
             data = await f.read()
-
-        import base64
 
         result = base64.b64encode(data).decode("ascii")
 
