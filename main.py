@@ -11,7 +11,6 @@ from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, StarTools
 from astrbot.core.exceptions import ProviderNotFoundError
-from astrbot.core.message.components import Image
 from astrbot.core.message.message_event_result import MessageChain
 from astrbot.core.provider.register import llm_tools
 
@@ -110,7 +109,9 @@ class StatusPlugin(Star):
                 ]
             )
         try:
-            await StarTools.send_message(session=event.session, message_chain=MessageChain().url_image(image_url))
+            await StarTools.send_message(
+                session=event.session, message_chain=MessageChain().url_image(image_url)
+            )
             logger.info("Status image sent to user via StarTools.send_message()")
         except Exception as e:
             logger.warning(f"Failed to send image via event: {e}")

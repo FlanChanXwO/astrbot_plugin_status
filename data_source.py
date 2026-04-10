@@ -30,6 +30,7 @@ class SystemDataSource:
         self._last_net_sample_ts = 0.0
         try:
             import os
+
             process = psutil.Process(os.getpid())
             self._system_start = dt.datetime.fromtimestamp(process.create_time())
         except Exception as e:
