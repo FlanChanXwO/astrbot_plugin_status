@@ -114,7 +114,9 @@ class StatusPlugin(Star):
             )
             logger.info("Status image sent to user via StarTools.send_message()")
         except Exception as e:
-            logger.warning(f"Failed to send image via StarTools.send_message() to session {event.session}: {e}")
+            logger.warning(
+                f"Failed to send image via StarTools.send_message() to session {event.session}: {e}"
+            )
         return mcp.types.CallToolResult(
             content=[
                 mcp.types.ImageContent(

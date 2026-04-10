@@ -56,7 +56,11 @@ def inline_fonts_in_css(css: str, base_dir: Path) -> str:
 
     # 扫描字体目录，按文件名排序确保一致性
     font_files = sorted(
-        [f for f in font_dir.iterdir() if f.is_file() and f.suffix.lower() in mime_types]
+        [
+            f
+            for f in font_dir.iterdir()
+            if f.is_file() and f.suffix.lower() in mime_types
+        ]
     )
 
     for font_path in font_files:
