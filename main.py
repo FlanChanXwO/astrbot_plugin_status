@@ -95,11 +95,14 @@ class StatusPlugin(Star):
             # 发送图片给用户
             try:
                 await StarTools.send_message(
-                    session=event.session, message_chain=MessageChain().url_image(image_url)
+                    session=event.session,
+                    message_chain=MessageChain().url_image(image_url),
                 )
                 logger.info("Status image sent to user via StarTools.send_message()")
             except Exception as e:
-                logger.warning(f"Failed to send image via StarTools.send_message() to session {event.session}: {e}")
+                logger.warning(
+                    f"Failed to send image via StarTools.send_message() to session {event.session}: {e}"
+                )
         except Exception as e:
             logger.warning(f"Failed to render status image: {e}")
 
@@ -131,11 +134,11 @@ CPU: {cpu_name}
 
 资源使用
 --------
-CPU: {metrics_map.get('CPU', 'N/A')}
-内存: {metrics_map.get('RAM', 'N/A')}
-交换: {metrics_map.get('SWAP', 'N/A')}
-磁盘: {metrics_map.get('DISK', 'N/A')}
-负载: {metrics_map.get('LOAD', 'N/A')}
+CPU: {metrics_map.get("CPU", "N/A")}
+内存: {metrics_map.get("RAM", "N/A")}
+交换: {metrics_map.get("SWAP", "N/A")}
+磁盘: {metrics_map.get("DISK", "N/A")}
+负载: {metrics_map.get("LOAD", "N/A")}
 
 网络与插件
 ----------
@@ -148,7 +151,9 @@ CPU: {metrics_map.get('CPU', 'N/A')}
         except Exception:
             logger.exception("获取系统状态信息失败")
             return mcp.types.CallToolResult(
-                content=[mcp.types.TextContent(type="text", text="获取系统状态信息失败。")]
+                content=[
+                    mcp.types.TextContent(type="text", text="获取系统状态信息失败。")
+                ]
             )
 
     @filter.command("status", alias={"状态"})
