@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.0.4] - 2026-05-24
+
+### Fixed
+- 修复LLM超时无用户提示的问题
+
+### Changed
+
+- LLM分析拆分为两步：视觉模型识图→文本模型转述，避免非vision模型传图片导致400错误
+
+### Added
+- 新增 vision_provider_id / comment_provider_id 配置项，支持单独指定识图和转述模型
+- 新增 vision_prompt / comment_prompt 配置项，支持自定义提示词
+- 添加 _resolve_provider 方法，模型解析优先级：配置 > 框架全局视觉模型 > 当前会话模型
+- 补充调用模型时的日志输出
+
 ## [1.0.3] - 2026-04-10
 
 ### Fixed

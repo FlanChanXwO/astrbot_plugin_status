@@ -4,9 +4,10 @@ addAssignees: false
 
 reviewers:
   - FlanChanXwO
+  - shitianyaa
 
 # Set 0 to add all reviewers
-numberOfReviewers: 0
+numberOfReviewers: 1
 
 skipKeywords:
   - wip
