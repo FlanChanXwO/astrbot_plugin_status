@@ -252,7 +252,11 @@ CPU: {metrics_map.get("CPU", "N/A")}
     async def _resolve_provider(
         self, config_pid: str, umo: str, prefer_vision: bool = False
     ) -> str:
-        """解析 provider ID。优先级：配置 > 框架全局视觉模型 > 当前会话模型。"""
+        """解析 provider ID。优先级：配置 > 框架全局视觉模型 > 当前会话模型。
+
+        仅在明确"未配置"时返回空字符串；
+        意料之外的运行时异常会向上抛出，避免掩盖真实 bug。
+        """
         if config_pid:
             return config_pid
         if prefer_vision:
@@ -266,14 +270,14 @@ CPU: {metrics_map.get("CPU", "N/A")}
                 ).strip()
                 if vlm_id:
                     return vlm_id
-            except Exception:
-                pass
+            except (KeyError, AttributeError, TypeError) as e:
+                logger.warning(f"[Status] 获取全局图片描述模型配置异常: {e}")
         try:
             pid = await self.context.get_current_chat_provider_id(umo=umo)
             if pid:
                 return str(pid).strip()
-        except Exception:
-            pass
+        except (ProviderNotFoundError, KeyError, AttributeError, TypeError) as e:
+            logger.warning(f"[Status] 获取当前会话模型失败: {e}")
         return ""
 
     async def _build_render_data(
