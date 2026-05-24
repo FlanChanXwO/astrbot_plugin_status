@@ -95,11 +95,14 @@ class StatusPlugin(Star):
             # 发送图片给用户
             try:
                 await StarTools.send_message(
-                    session=event.session, message_chain=MessageChain().url_image(image_url)
+                    session=event.session,
+                    message_chain=MessageChain().url_image(image_url),
                 )
                 logger.info("Status image sent to user via StarTools.send_message()")
             except Exception as e:
-                logger.warning(f"Failed to send image via StarTools.send_message() to session {event.session}: {e}")
+                logger.warning(
+                    f"Failed to send image via StarTools.send_message() to session {event.session}: {e}"
+                )
         except Exception as e:
             logger.warning(f"Failed to render status image: {e}")
 
@@ -131,11 +134,11 @@ CPU: {cpu_name}
 
 资源使用
 --------
-CPU: {metrics_map.get('CPU', 'N/A')}
-内存: {metrics_map.get('RAM', 'N/A')}
-交换: {metrics_map.get('SWAP', 'N/A')}
-磁盘: {metrics_map.get('DISK', 'N/A')}
-负载: {metrics_map.get('LOAD', 'N/A')}
+CPU: {metrics_map.get("CPU", "N/A")}
+内存: {metrics_map.get("RAM", "N/A")}
+交换: {metrics_map.get("SWAP", "N/A")}
+磁盘: {metrics_map.get("DISK", "N/A")}
+负载: {metrics_map.get("LOAD", "N/A")}
 
 网络与插件
 ----------
@@ -148,7 +151,9 @@ CPU: {metrics_map.get('CPU', 'N/A')}
         except Exception:
             logger.exception("获取系统状态信息失败")
             return mcp.types.CallToolResult(
-                content=[mcp.types.TextContent(type="text", text="获取系统状态信息失败。")]
+                content=[
+                    mcp.types.TextContent(type="text", text="获取系统状态信息失败。")
+                ]
             )
 
     @filter.command("status", alias={"状态"})
@@ -173,8 +178,12 @@ CPU: {metrics_map.get('CPU', 'N/A')}
         if enable_llm:
             try:
                 umo = event.unified_msg_origin
-                vision_pid = str(self.config.get("vision_provider_id", "") or "").strip()
-                comment_pid = str(self.config.get("comment_provider_id", "") or "").strip()
+                vision_pid = str(
+                    self.config.get("vision_provider_id", "") or ""
+                ).strip()
+                comment_pid = str(
+                    self.config.get("comment_provider_id", "") or ""
+                ).strip()
                 vision_prompt = self.config.get(
                     "vision_prompt",
                     "把图片中各种指标用文字描述出来",
@@ -185,10 +194,14 @@ CPU: {metrics_map.get('CPU', 'N/A')}
                 )
 
                 # 第一步：视觉模型识图
-                v_pid = await self._resolve_provider(vision_pid, umo, prefer_vision=True)
+                v_pid = await self._resolve_provider(
+                    vision_pid, umo, prefer_vision=True
+                )
                 if not v_pid:
                     logger.warning("未配置视觉模型，跳过 LLM 分析")
-                    yield event.plain_result("系统状态图片已生成，但未配置视觉模型，无法进行AI分析。")
+                    yield event.plain_result(
+                        "系统状态图片已生成，但未配置视觉模型，无法进行AI分析。"
+                    )
                     return
                 logger.info(f"[Status] 识图模型: {v_pid}")
 
@@ -198,10 +211,14 @@ CPU: {metrics_map.get('CPU', 'N/A')}
                         prompt=vision_prompt,
                         image_urls=[image_url],
                     )
-                description = (vision_resp.completion_text or "").strip() if vision_resp else ""
+                description = (
+                    (vision_resp.completion_text or "").strip() if vision_resp else ""
+                )
                 if not description:
                     logger.warning("视觉模型返回空结果")
-                    yield event.plain_result("系统状态图片已生成，但视觉模型未返回分析结果。")
+                    yield event.plain_result(
+                        "系统状态图片已生成，但视觉模型未返回分析结果。"
+                    )
                     return
                 logger.info(f"[Status] 识图结果: {description[:80]}...")
 
