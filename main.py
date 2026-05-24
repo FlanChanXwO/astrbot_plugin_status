@@ -95,11 +95,14 @@ class StatusPlugin(Star):
             # 发送图片给用户
             try:
                 await StarTools.send_message(
-                    session=event.session, message_chain=MessageChain().url_image(image_url)
+                    session=event.session,
+                    message_chain=MessageChain().url_image(image_url),
                 )
                 logger.info("Status image sent to user via StarTools.send_message()")
             except Exception as e:
-                logger.warning(f"Failed to send image via StarTools.send_message() to session {event.session}: {e}")
+                logger.warning(
+                    f"Failed to send image via StarTools.send_message() to session {event.session}: {e}"
+                )
         except Exception as e:
             logger.warning(f"Failed to render status image: {e}")
 
@@ -131,11 +134,11 @@ CPU: {cpu_name}
 
 资源使用
 --------
-CPU: {metrics_map.get('CPU', 'N/A')}
-内存: {metrics_map.get('RAM', 'N/A')}
-交换: {metrics_map.get('SWAP', 'N/A')}
-磁盘: {metrics_map.get('DISK', 'N/A')}
-负载: {metrics_map.get('LOAD', 'N/A')}
+CPU: {metrics_map.get("CPU", "N/A")}
+内存: {metrics_map.get("RAM", "N/A")}
+交换: {metrics_map.get("SWAP", "N/A")}
+磁盘: {metrics_map.get("DISK", "N/A")}
+负载: {metrics_map.get("LOAD", "N/A")}
 
 网络与插件
 ----------
@@ -148,7 +151,9 @@ CPU: {metrics_map.get('CPU', 'N/A')}
         except Exception:
             logger.exception("获取系统状态信息失败")
             return mcp.types.CallToolResult(
-                content=[mcp.types.TextContent(type="text", text="获取系统状态信息失败。")]
+                content=[
+                    mcp.types.TextContent(type="text", text="获取系统状态信息失败。")
+                ]
             )
 
     @filter.command("status", alias={"状态"})
@@ -172,30 +177,108 @@ CPU: {metrics_map.get('CPU', 'N/A')}
         enable_llm = self.config.get("enable_llm_analysis", False)
         if enable_llm:
             try:
-                prov_id = await self.context.get_current_chat_provider_id(
-                    event.unified_msg_origin
+                umo = event.unified_msg_origin
+                vision_pid = str(
+                    self.config.get("vision_provider_id", "") or ""
+                ).strip()
+                comment_pid = str(
+                    self.config.get("comment_provider_id", "") or ""
+                ).strip()
+                vision_prompt = self.config.get(
+                    "vision_prompt",
+                    "把图片中各种指标用文字描述出来",
                 )
-                prompt = self.config.get(
-                    "llm_analysis_prompt",
-                    "请简要分析这张系统状态图片，用一两句话总结 CPU、内存、磁盘等关键信息。",
+                comment_prompt = self.config.get(
+                    "comment_prompt",
+                    "根据以下系统状态描述，用简洁友好的语气总结当前服务器状况，重点关注异常项。\n\n系统状态描述：{description}",
                 )
+
+                # 第一步：视觉模型识图
+                v_pid = await self._resolve_provider(
+                    vision_pid, umo, prefer_vision=True
+                )
+                if not v_pid:
+                    logger.warning("未配置视觉模型，跳过 LLM 分析")
+                    yield event.plain_result(
+                        "系统状态图片已生成，但未配置视觉模型，无法进行AI分析。"
+                    )
+                    return
+                logger.info(f"[Status] 识图模型: {v_pid}")
+
                 async with asyncio.timeout(LLM_TIMEOUT):
-                    llm_resp = await self.context.llm_generate(
-                        chat_provider_id=prov_id,
-                        prompt=prompt,
+                    vision_resp = await self.context.llm_generate(
+                        chat_provider_id=v_pid,
+                        prompt=vision_prompt,
                         image_urls=[image_url],
                     )
-                if llm_resp and llm_resp.completion_text:
-                    yield event.plain_result(llm_resp.completion_text)
+                description = (
+                    (vision_resp.completion_text or "").strip() if vision_resp else ""
+                )
+                if not description:
+                    logger.warning("视觉模型返回空结果")
+                    yield event.plain_result(
+                        "系统状态图片已生成，但视觉模型未返回分析结果。"
+                    )
+                    return
+                logger.info(f"[Status] 识图结果: {description[:80]}...")
+
+                # 第二步：文本模型转述
+                c_pid = await self._resolve_provider(comment_pid, umo)
+                if not c_pid:
+                    logger.warning("未配置转述模型，直接返回识图结果")
+                    yield event.plain_result(description)
+                    return
+                logger.info(f"[Status] 转述模型: {c_pid}")
+
+                final_prompt = comment_prompt.replace("{description}", description)
+                async with asyncio.timeout(LLM_TIMEOUT):
+                    comment_resp = await self.context.llm_generate(
+                        chat_provider_id=c_pid,
+                        prompt=final_prompt,
+                    )
+                if comment_resp and comment_resp.completion_text:
+                    yield event.plain_result(comment_resp.completion_text)
                 else:
-                    logger.warning("LLM analysis returned no completion text")
-                    yield event.plain_result("系统状态图片已生成，但AI分析未返回结果。")
+                    logger.warning("转述模型返回空结果，回退到识图结果")
+                    yield event.plain_result(description)
             except asyncio.TimeoutError:
                 logger.warning("LLM analysis timed out")
+                yield event.plain_result("大模型识别分析超时，请尝试更换模型或者重试。")
             except ProviderNotFoundError:
                 logger.debug("No chat provider configured, skip LLM analysis")
             except Exception:
                 logger.exception("LLM analysis failed")
+
+    async def _resolve_provider(
+        self, config_pid: str, umo: str, prefer_vision: bool = False
+    ) -> str:
+        """解析 provider ID。优先级：配置 > 框架全局视觉模型 > 当前会话模型。
+
+        仅在明确"未配置"时返回空字符串；
+        意料之外的运行时异常会向上抛出，避免掩盖真实 bug。
+        """
+        if config_pid:
+            return config_pid
+        if prefer_vision:
+            try:
+                cfg = self.context.get_config()
+                vlm_id = str(
+                    (cfg.get("provider_settings") or {}).get(
+                        "default_image_caption_provider_id", ""
+                    )
+                    or ""
+                ).strip()
+                if vlm_id:
+                    return vlm_id
+            except (KeyError, AttributeError, TypeError) as e:
+                logger.warning(f"[Status] 获取全局图片描述模型配置异常: {e}")
+        try:
+            pid = await self.context.get_current_chat_provider_id(umo=umo)
+            if pid:
+                return str(pid).strip()
+        except (ProviderNotFoundError, KeyError, AttributeError, TypeError) as e:
+            logger.warning(f"[Status] 获取当前会话模型失败: {e}")
+        return ""
 
     async def _build_render_data(
         self, event: AstrMessageEvent
