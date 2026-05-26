@@ -290,7 +290,7 @@ body {
     position: absolute; opacity: 0.15; fill: #a0a0a0;
     pointer-events: none; z-index: 0;
 }
-.bg-tiny-paw { right: 120px; bottom: 90px; width: 30px; height: 30px; }
-.bg-small-paw { left: 50px; bottom: -225px; width: 60px; height: 60px; }
-.bg-medium-paw { right: 50px; bottom: 90px; width: 70px; height: 70px; }
-.bg-big-paw { right: 40px; bottom: -200px; width: 90px; height: 90px; }
+.bg-tiny-paw { right: 120px; bottom: 310px; width: 30px; height: 30px; }
+.bg-small-paw { left: 50px; bottom: 0px; width: 60px; height: 60px; }
+.bg-medium-paw { right: 50px; bottom: 310px; width: 70px; height: 70px; }
+.bg-big-paw { right: 40px; bottom: 20px; width: 90px; height: 90px; }

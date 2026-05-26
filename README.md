@@ -78,19 +78,27 @@
 
 | 配置项 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
+| `auto_use_current_name` | 布尔值 | 自动使用事件发送者名称；取不到时使用平台 ID，再取不到时使用 `bot_name` | `true` |
 | `bot_name` | 字符串 | 显示在状态卡片上的机器人名称 | `AstrBot` |
 | `banner_image` | 文件列表 | 自定义状态背景图（支持 png/jpg/jpeg），可上传多张随机展示 | `[]` |
 | `enable_llm_analysis` | 布尔值 | 是否在返回状态图后调用 LLM 进行智能分析 | `false` |
-| `llm_analysis_prompt` | 字符串 | LLM 分析时使用的提示词 | `请简要分析这张系统状态图片...` |
+| `vision_provider_id` | 字符串 | 识图模型 provider，留空时优先使用 AstrBot 全局图片描述模型 | `""` |
+| `comment_provider_id` | 字符串 | 文本转述 provider，留空时使用当前会话模型 | `""` |
+| `vision_prompt` | 字符串 | 发送给视觉模型的提示词 | `把图片中各种指标用文字描述出来` |
+| `comment_prompt` | 字符串 | 发送给文本模型的提示词，使用 `{description}` 表示识图结果 | 见 `_conf_schema.json` |
 
 ### 配置示例
 
 ```json
 {
+  "auto_use_current_name": false,
   "bot_name": "我的Bot",
   "banner_image": ["/path/to/banner1.png", "/path/to/banner2.jpg"],
   "enable_llm_analysis": true,
-  "llm_analysis_prompt": "请分析系统状态，指出是否有异常"
+  "vision_provider_id": "",
+  "comment_provider_id": "",
+  "vision_prompt": "请描述这张系统状态图片中的关键指标",
+  "comment_prompt": "请根据以下状态描述判断是否异常：{description}"
 }
 ```
 

@@ -10,10 +10,10 @@ from pathlib import Path
 
 import psutil
 
-from astrbot.api import logger
 from astrbot.api.event import AstrMessageEvent
 from astrbot.api.star import Context
 
+from .logger import logger
 from .models import Metric
 
 

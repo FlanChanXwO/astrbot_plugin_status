@@ -1,18 +1,29 @@
 {
+  "auto_use_current_name": {
+    "type": "bool",
+    "description": "自动获取机器人名称",
+    "default": "true"
+  },
   "bot_name": {
     "type": "string",
-    "description": "显示在状态卡片上的机器人名称。",
+    "description": "自定义机器人名称",
+    "hint": "当 自动获取机器人名称 为关闭状态时生效，自定义显示在状态卡片上的机器人名称。",
     "default": "AstrBot"
   },
   "banner_image": {
     "type": "file",
     "description": "自定义状态背景图",
     "default": [],
-    "file_types": ["png", "jpg", "jpeg"]
+    "file_types": [
+      "png",
+      "jpg",
+      "jpeg"
+    ]
   },
   "enable_llm_analysis": {
     "type": "bool",
-    "description": "在 /状态 命令返回图片后，是否调用 LLM 分析",
+    "description": "LLM 分析",
+    "hint": "在 /状态 命令返回图片后，是否调用 LLM 分析",
     "default": false
   },
   "vision_provider_id": {
@@ -36,7 +47,8 @@
   },
   "comment_prompt": {
     "type": "string",
-    "description": "转述提示词（发送给文本模型）。用 {description} 代表识图结果的占位符。",
+    "description": "转述提示词（发送给文本模型）",
+    "hint": "用 {description} 代表识图结果的占位符。",
     "default": "根据以下系统状态描述，用简洁友好的语气总结当前服务器状况，重点关注异常项。\n\n系统状态描述：{description}"
   }
 }
