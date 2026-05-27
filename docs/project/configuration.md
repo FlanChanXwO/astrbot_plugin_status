@@ -23,4 +23,5 @@
 - Provider 字段使用 AstrBot 的 `select_provider` 特殊选择器。
 - `banner_image` 是用户文件路径入口，读取时必须保留路径范围检查。
 - `auto_use_current_name` 表示状态卡片优先显示机器人自身身份，不表示命令发送者名称；平台无法提供机器人名称时按 `event.get_platform_id()`、`bot_name` 顺序回退。OneBot v11 平台标识使用 AstrBot 的真实名称 `aiocqhttp`，并通过 `get_login_info.nickname` 尝试获取机器人昵称。
+- 状态卡片渲染 payload 会限制机器人名称展示长度，超长时在中间用 `...` 省略；`HtmlRender.build_status_text()` 的文本摘要保留完整名称。
 - `comment_prompt` 修改时必须保留 `{description}` 语义，或同步修改代码中的替换逻辑。

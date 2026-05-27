@@ -19,6 +19,22 @@ def list_files(directory: Path) -> list[Path]:
     return [path for path in directory.iterdir() if path.is_file()]
 
 
+def truncate_middle(text: str, max_length: int) -> str:
+    """把过长文本截成中间省略，确保结果不超过 max_length。"""
+    if max_length <= 0:
+        return ""
+    if len(text) <= max_length:
+        return text
+    if max_length <= 3:
+        return "." * max_length
+
+    keep_length = max_length - 3
+    head_length = (keep_length + 1) // 2
+    tail_length = keep_length // 2
+    tail = text[-tail_length:] if tail_length else ""
+    return f"{text[:head_length]}...{tail}"
+
+
 def _is_safe_path(path: Path, base_dir: Path) -> bool:
     """检查路径是否在允许的目录范围内，防止路径穿越攻击"""
     try:

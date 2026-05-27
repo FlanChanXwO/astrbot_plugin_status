@@ -23,6 +23,13 @@ def install_astrbot_stubs(*, include_event: bool = False) -> None:
     )
     sys.modules.setdefault("astrbot", astrbot_module)
     sys.modules.setdefault("astrbot.api", astrbot_api_module)
+    astrbot_core_module = types.ModuleType("astrbot.core")
+    astrbot_core_utils_module = types.ModuleType("astrbot.core.utils")
+    astrbot_core_utils_io_module = types.ModuleType("astrbot.core.utils.io")
+    astrbot_core_utils_io_module.download_image_by_url = lambda url: url
+    sys.modules.setdefault("astrbot.core", astrbot_core_module)
+    sys.modules.setdefault("astrbot.core.utils", astrbot_core_utils_module)
+    sys.modules.setdefault("astrbot.core.utils.io", astrbot_core_utils_io_module)
 
     if include_event:
         astrbot_event_module = types.ModuleType("astrbot.api.event")

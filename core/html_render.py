@@ -10,10 +10,14 @@ from astrbot.api.star import Context
 
 from .bot_identity_resolver import BotIdentityResolver
 from .config_manager import ConfigManager
-from .constants import DEFAULT_DASHBOARD_NAME, RENDER_OPTIONS
+from .constants import (
+    DEFAULT_DASHBOARD_NAME,
+    MAX_RENDERED_BOT_NAME_LENGTH,
+    RENDER_OPTIONS,
+)
 from .data_source import SystemDataSource
 from .models import StatusPayload
-from .utils import get_random_file_data_uri, inline_fonts_in_css
+from .utils import get_random_file_data_uri, inline_fonts_in_css, truncate_middle
 
 HtmlRenderCallable = Callable[..., Awaitable[str]]
 
@@ -133,10 +137,11 @@ CPU: {metrics_map.get("CPU", "N/A")}
 
         upload_kbs, download_kbs = self.data_source.get_net_speed_kbs()
         plugin_count_str = str(await self.data_source.get_plugin_counts())
+        bot_name = await self.bot_identity_resolver.resolve(event)
 
         payload = StatusPayload(
             css_style=f"<style>{css}</style>",
-            bot_name=await self.bot_identity_resolver.resolve(event),
+            bot_name=truncate_middle(bot_name, MAX_RENDERED_BOT_NAME_LENGTH),
             metrics=self.data_source.get_metrics(),
             cpu_name=await self.data_source.get_cpu_name(),
             os_name=self.data_source.get_os_name(),
