@@ -8,6 +8,7 @@ from pathlib import Path
 from astrbot.api.event import AstrMessageEvent
 from astrbot.api.star import Context
 
+from .bot_identity_resolver import BotIdentityResolver
 from .config_manager import ConfigManager
 from .constants import DEFAULT_DASHBOARD_NAME, RENDER_OPTIONS
 from .data_source import SystemDataSource
@@ -29,6 +30,7 @@ class HtmlRender:
         plugin_data_dir: Path,
         html_render: HtmlRenderCallable,
         data_source: SystemDataSource | None = None,
+        bot_identity_resolver: BotIdentityResolver | None = None,
     ) -> None:
         self.context = context
         self.config_manager = config_manager
@@ -43,6 +45,10 @@ class HtmlRender:
         )
         self.render_options = dict(RENDER_OPTIONS)
         self.data_source = data_source or SystemDataSource(context, self.base_dir)
+        self.bot_identity_resolver = bot_identity_resolver or BotIdentityResolver(
+            context,
+            config_manager,
+        )
 
     async def render_status_image(self, event: AstrMessageEvent) -> str:
         """构建状态卡数据，并调用 AstrBot html_render 生成图片 URL。"""
@@ -64,7 +70,7 @@ class HtmlRender:
         upload_kbs, download_kbs = self.data_source.get_net_speed_kbs()
         uptime = self.data_source.get_uptime_text()
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        bot_name = self.config_manager.resolve_bot_name(event)
+        bot_name = await self.bot_identity_resolver.resolve(event)
 
         metrics_map = {m.label: m.value for m in metrics}
         return f"""\
@@ -130,7 +136,7 @@ CPU: {metrics_map.get("CPU", "N/A")}
 
         payload = StatusPayload(
             css_style=f"<style>{css}</style>",
-            bot_name=self.config_manager.resolve_bot_name(event),
+            bot_name=await self.bot_identity_resolver.resolve(event),
             metrics=self.data_source.get_metrics(),
             cpu_name=await self.data_source.get_cpu_name(),
             os_name=self.data_source.get_os_name(),

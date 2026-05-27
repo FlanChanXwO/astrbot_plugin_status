@@ -56,19 +56,6 @@ class ConfigManager:
             ),
         )
 
-    def resolve_bot_name(self, event: Any | None = None) -> str:
-        """按配置决定状态卡显示名，自动模式优先使用事件里可见的名称。"""
-        if not self.auto_use_current_name or event is None:
-            return self.bot_name
-        for getter_name in ("get_sender_name", "get_platform_id"):
-            getter = getattr(event, getter_name, None)
-            if not callable(getter):
-                continue
-            name = str(getter() or "").strip()
-            if name:
-                return name
-        return self.bot_name
-
     def _get_bool(self, key: str, default: bool) -> bool:
         value = self.config.get(key, default)
         if isinstance(value, bool):

@@ -14,7 +14,8 @@
 ### Added
 
 - 新增 `core/logger.py`，统一包装 AstrBot logger，并为插件日志添加 `[astrbot_plugin_status]` 前缀。
-- 新增 `auto_use_current_name` 配置支持：启用后优先使用 `AstrMessageEvent.get_sender_name()` 获取发送者名称，无法获取时回退到 `get_platform_id()`，最后回退到手动配置的 `bot_name`。
+- 新增 `BotIdentityResolver`，集中解析机器人自身显示名，并支持 `kook`、`mattermost`、`misskey`、`discord`、`telegram`、`aiocqhttp` 的平台差异；其中 `aiocqhttp` 通过 OneBot `get_login_info.nickname` 获取机器人昵称。
+- 新增 `auto_use_current_name` 配置支持：启用后优先获取机器人自身名称或标识，无法获取名称时回退到平台实例 ID，最后回退到手动配置的 `bot_name`。
 - 新增架构边界测试，防止渲染数据拼接重新回到 `StatusService` 或 `main.py`。
 - 新增 T2I 回归测试，用于验证状态图底部不再出现大块白色留白。
 - 新增项目文档目录，记录架构、配置、开发、测试和维护约束。
@@ -24,6 +25,8 @@
 
 - 修复背景 paw 装饰在 T2I full-page 截图中被计入页面滚动高度后导致底部异常留白的问题。
 - 修复部分 paw 装饰因布局位置调整不当导致从状态图中消失的问题。
+- 修复 `auto_use_current_name` 误把命令发送者名称当作机器人名称的问题。
+- 修复 macOS 下 Apple Silicon 芯片名称不准确；CPU 详情行仅显示芯片名称，CPU 指标行区分物理核和线程数且单位文本统一使用英文。
 
 ### Removed
 

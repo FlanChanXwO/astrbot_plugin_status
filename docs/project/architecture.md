@@ -6,6 +6,7 @@
 main.py
   -> core.ConfigManager
   -> core.HtmlRender
+       -> core.BotIdentityResolver
        -> core.SystemDataSource
        -> core.utils
        -> core.models.StatusPayload
@@ -39,6 +40,7 @@ main.py
 `HtmlRender` 负责状态图渲染和数据拼接：
 
 - 管理模板、CSS、默认 Banner 和角色图片资源路径
+- 调用 `BotIdentityResolver` 解析状态卡片展示的机器人名称
 - 调用 `SystemDataSource` 采集状态指标
 - 构建 `StatusPayload` 和 LLM tool 文本摘要
 - 调用 AstrBot `html_render()` 生成图片 URL
@@ -53,6 +55,8 @@ main.py
 - 网络瞬时上传/下载速度
 - AstrBot 版本和已加载插件数
 - 当前进程运行时间
+
+macOS 的 CPU 详情名称优先从 `system_profiler SPHardwareDataType` 的 `Chip` 字段读取，只显示芯片或处理器名称；CPU 使用率指标通过 `psutil` 区分物理核和线程数，渲染文本使用英文单位，例如 `10 Cores / 20 Threads`。
 
 网络速度是基于两次采样之间的差值计算的，因此首次调用通常返回 `0.0`。
 
@@ -78,6 +82,16 @@ main.py
 ## `core/config_manager.py`
 
 `ConfigManager` 负责集中加载、归一化和校验 `_conf_schema.json` 中的配置字段。入口和核心模块应读取已解析后的属性，不要在业务流程里散落直接调用 `config.get(...)`。
+
+`auto_use_current_name` 的语义是解析机器人自身名称或标识，用于状态卡片中的机器人名称展示。平台适配器无法提供机器人显示名时，名称解析应回退到 `event.get_platform_id()`，仍不可用时回退到手动配置的 `bot_name`；该配置不应解析为命令发送者名称。
+
+## `core/bot_identity_resolver.py`
+
+`BotIdentityResolver` 负责按当前事件和平台实例解析机器人自身显示名。它通过 `Context.get_platform_inst(event.get_platform_id())` 优先定位当前平台实例，并按白名单读取 `kook`、`mattermost`、`misskey`、`discord`、`telegram` 的可用机器人昵称或账号标识；`aiocqhttp` 使用 OneBot `get_login_info.nickname` 动态获取机器人昵称。取不到时回退到 `event.get_platform_id()`，再取不到时回退到 `ConfigManager.bot_name`。
+
+AstrBot 的 OneBot v11 平台标识是 `aiocqhttp`，不是 `aiohttpcq`；文档和代码均应使用 `PlatformMetadata.name` 的真实值。
+
+禁止使用 `event.get_sender_name()` 作为机器人名称来源，因为该方法表示命令发送者。
 
 ## `core/logger.py`
 

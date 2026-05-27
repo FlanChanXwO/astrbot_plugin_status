@@ -44,18 +44,16 @@
 
 ## 测试与检查命令
 
-从 AstrBot 项目根目录运行检查：
+从插件目录优先运行完整测试与检查：
 
 ```bash
-uv run ruff format data/plugins/astrbot_plugin_status
-uv run ruff check data/plugins/astrbot_plugin_status
+./tests/run_tests.sh
 ```
 
-从插件目录运行语法与测试检查：
+Windows PowerShell：
 
-```bash
-python3 -m compileall main.py core
-pytest tests/ -v
+```powershell
+.\tests\run_tests.ps1
 ```
 
 本地集成验证通常需要运行上层 AstrBot 入口：

@@ -38,18 +38,6 @@ DEFAULT_COMMENT_PROMPT = status_config_manager.DEFAULT_COMMENT_PROMPT
 DEFAULT_VISION_PROMPT = status_config_manager.DEFAULT_VISION_PROMPT
 
 
-class FakeEvent:
-    def __init__(self, sender_name: str = "", platform_id: str = "") -> None:
-        self.sender_name = sender_name
-        self.platform_id = platform_id
-
-    def get_sender_name(self) -> str:
-        return self.sender_name
-
-    def get_platform_id(self) -> str:
-        return self.platform_id
-
-
 def test_config_manager_loads_defaults() -> None:
     manager = ConfigManager({})
     manager.load()
@@ -117,27 +105,3 @@ def test_config_manager_falls_back_for_invalid_types() -> None:
     assert manager.llm_analysis.comment_provider_id == ""
     assert manager.llm_analysis.vision_prompt == DEFAULT_VISION_PROMPT
     assert manager.llm_analysis.comment_prompt == DEFAULT_COMMENT_PROMPT
-
-
-def test_resolve_bot_name_uses_sender_name_then_platform_id() -> None:
-    manager = ConfigManager({"bot_name": "配置名"})
-    manager.load()
-
-    assert manager.resolve_bot_name(FakeEvent(sender_name="发送者")) == "发送者"
-    assert (
-        manager.resolve_bot_name(FakeEvent(sender_name="", platform_id="platform-a"))
-        == "platform-a"
-    )
-    assert manager.resolve_bot_name(FakeEvent()) == "配置名"
-
-
-def test_resolve_bot_name_respects_manual_name_mode() -> None:
-    manager = ConfigManager(
-        {
-            "auto_use_current_name": False,
-            "bot_name": "手动名",
-        }
-    )
-    manager.load()
-
-    assert manager.resolve_bot_name(FakeEvent(sender_name="发送者")) == "手动名"
