@@ -1,53 +1,27 @@
 from __future__ import annotations
 
-import importlib.util
-import sys
-import types
-from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
+from tests.support import (
+    create_core_package,
+    install_astrbot_stubs,
+    load_core_module,
+)
+
 pytestmark = pytest.mark.asyncio
 
-ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_NAME = "status_core_identity_tests"
 
-astrbot_api_module = types.ModuleType("astrbot.api")
-astrbot_api_module.logger = SimpleNamespace(
-    debug=lambda *args, **kwargs: None,
-    info=lambda *args, **kwargs: None,
-    warning=lambda *args, **kwargs: None,
-    error=lambda *args, **kwargs: None,
-    exception=lambda *args, **kwargs: None,
-    critical=lambda *args, **kwargs: None,
-)
-sys.modules.setdefault("astrbot", types.ModuleType("astrbot"))
-sys.modules.setdefault("astrbot.api", astrbot_api_module)
+install_astrbot_stubs()
+create_core_package(PACKAGE_NAME)
 
-package = types.ModuleType(PACKAGE_NAME)
-package.__path__ = [str(ROOT / "core")]
-sys.modules[PACKAGE_NAME] = package
-
-
-def _load_module(module_name: str, file_name: str) -> types.ModuleType:
-    spec = importlib.util.spec_from_file_location(
-        f"{PACKAGE_NAME}.{module_name}",
-        ROOT / "core" / file_name,
-    )
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-_load_module("constants", "constants.py")
-_load_module("logger", "logger.py")
-config_module = _load_module("config_manager", "config_manager.py")
-resolver_module = _load_module("bot_identity_resolver", "bot_identity_resolver.py")
+load_core_module(PACKAGE_NAME, "constants")
+load_core_module(PACKAGE_NAME, "logger")
+config_module = load_core_module(PACKAGE_NAME, "config_manager")
+resolver_module = load_core_module(PACKAGE_NAME, "bot_identity_resolver")
 
 ConfigManager = config_module.ConfigManager
 BotIdentityResolver = resolver_module.BotIdentityResolver

@@ -56,7 +56,7 @@ main.py
 - AstrBot 版本和已加载插件数
 - 当前进程运行时间
 
-macOS 的 CPU 详情名称优先从 `system_profiler SPHardwareDataType` 的 `Chip` 字段读取，只显示芯片或处理器名称；CPU 使用率指标可使用 `sysctl` / `psutil` 区分物理核和线程数，渲染文本使用英文单位，例如 `10 Cores / 20 Threads`。
+macOS 的 CPU 详情名称优先从 `system_profiler SPHardwareDataType` 的 `Chip` 字段读取，只显示芯片或处理器名称；CPU 使用率指标通过 `psutil` 区分物理核和线程数，渲染文本使用英文单位，例如 `10 Cores / 20 Threads`。
 
 网络速度是基于两次采样之间的差值计算的，因此首次调用通常返回 `0.0`。
 

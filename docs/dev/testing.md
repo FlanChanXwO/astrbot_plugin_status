@@ -19,7 +19,7 @@ Windows PowerShell：
 | Python lint | 插件目录 | `uv run ruff check main.py core tests` |
 | Python 格式检查 | 插件目录 | `uv run ruff format --check main.py core tests` |
 | 语法检查 | 插件目录 | `python3 -m compileall main.py core tests` |
-| pytest | 插件目录 | `pytest tests/ -v -o cache_dir=/private/tmp/astrbot_plugin_status_pytest_cache` |
+| pytest | 插件目录 | `pytest tests/ -v` |
 
 > [!TIP]
 > 这些是测试与检查命令，不是插件的独立运行命令。实际集成验证入口见 [`setup.md`](./setup.md#本地集成验证)。

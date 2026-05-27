@@ -17,6 +17,8 @@ from astrbot.api.star import Context
 from .logger import logger
 from .models import Metric
 
+SYSTEM_INFO_COMMAND_TIMEOUT_SECONDS = 2.0
+
 
 class SystemDataSource:
     """
@@ -200,7 +202,25 @@ class SystemDataSource:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await proc.communicate()
+        try:
+            # 系统信息命令只用于增强展示，超时后应让状态卡继续走通用回退链。
+            stdout, stderr = await asyncio.wait_for(
+                proc.communicate(),
+                timeout=SYSTEM_INFO_COMMAND_TIMEOUT_SECONDS,
+            )
+        except asyncio.TimeoutError:
+            logger.debug(
+                f"Command {args!r} timed out after "
+                f"{SYSTEM_INFO_COMMAND_TIMEOUT_SECONDS:.1f}s "
+                "while collecting system info"
+            )
+            try:
+                proc.kill()
+                await proc.wait()
+            except ProcessLookupError:
+                pass
+            return ""
+
         if proc.returncode != 0:
             err = stderr.decode("utf-8", errors="ignore").strip()
             raise subprocess.CalledProcessError(
@@ -210,19 +230,6 @@ class SystemDataSource:
                 stderr=err,
             )
         return stdout.decode("utf-8", errors="ignore")
-
-    async def _get_macos_cpu_count(self, key: str) -> int:
-        text = await self._get_macos_sysctl_text(key)
-        try:
-            value = int(text)
-        except ValueError:
-            return 0
-        return max(0, value)
-
-    async def _get_macos_cpu_counts(self) -> tuple[int, int]:
-        physical = await self._get_macos_cpu_count("hw.physicalcpu")
-        logical = await self._get_macos_cpu_count("hw.logicalcpu")
-        return physical, logical
 
     @staticmethod
     def _get_cpu_name_generic() -> str:
