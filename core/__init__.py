@@ -1,3 +1,4 @@
+from .bot_identity_resolver import BotIdentityResolver
 from .config_manager import ConfigManager, LLMAnalysisConfig
 from .data_source import SystemDataSource
 from .html_render import HtmlRender
@@ -7,6 +8,7 @@ from .status_service import StatusService
 
 __all__ = [
     "ConfigManager",
+    "BotIdentityResolver",
     "HtmlRender",
     "LLMAnalysisConfig",
     "Metric",

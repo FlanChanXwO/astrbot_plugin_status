@@ -5,6 +5,7 @@ import datetime as dt
 import inspect
 import platform
 import shutil
+import subprocess
 import time
 from pathlib import Path
 
@@ -95,9 +96,11 @@ class SystemDataSource:
             cpu_name = self._get_cpu_name_linux()
         elif system == "Windows":
             cpu_name = await self._get_cpu_name_windows()
+        elif system == "Darwin":
+            cpu_name = await self._get_cpu_name_macos()
         else:
             cpu_name = self._get_cpu_name_generic()
-        return self._truncate_text(cpu_name)
+        return cpu_name
 
     def _get_cpu_name_linux(self) -> str:
         """在Linux上获取CPU名称"""
@@ -151,6 +154,75 @@ class SystemDataSource:
             logger.debug(f"Failed to get CPU name on Windows: {e}")
 
         return self._get_cpu_name_generic()
+
+    async def _get_cpu_name_macos(self) -> str:
+        """在 macOS 上获取准确芯片名称和核心/线程数量。"""
+        chip_name = await self._get_macos_chip_name()
+        if not chip_name:
+            chip_name = await self._get_macos_sysctl_text("machdep.cpu.brand_string")
+
+        if not chip_name:
+            return self._get_cpu_name_generic()
+
+        return chip_name
+
+    async def _get_macos_chip_name(self) -> str:
+        """从 system_profiler 读取 Apple Silicon 的 Chip 字段。"""
+        try:
+            stdout = await self._run_command_stdout(
+                "system_profiler",
+                "SPHardwareDataType",
+            )
+        except Exception as e:
+            logger.debug(f"Failed to get macOS chip name from system_profiler: {e}")
+            return ""
+
+        for line in stdout.splitlines():
+            key, sep, value = line.partition(":")
+            if sep and key.strip() in {"Chip", "Processor Name"}:
+                name = value.strip()
+                if name:
+                    return name
+        return ""
+
+    async def _get_macos_sysctl_text(self, key: str) -> str:
+        """读取 macOS sysctl 单个键，部分沙盒环境可能不允许访问。"""
+        try:
+            return (await self._run_command_stdout("sysctl", "-n", key)).strip()
+        except Exception as e:
+            logger.debug(f"Failed to get macOS sysctl {key}: {e}")
+            return ""
+
+    async def _run_command_stdout(self, *args: str) -> str:
+        """运行只读系统信息命令并返回 stdout 文本。"""
+        proc = await asyncio.create_subprocess_exec(
+            *args,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            err = stderr.decode("utf-8", errors="ignore").strip()
+            raise subprocess.CalledProcessError(
+                proc.returncode,
+                args,
+                output=stdout,
+                stderr=err,
+            )
+        return stdout.decode("utf-8", errors="ignore")
+
+    async def _get_macos_cpu_count(self, key: str) -> int:
+        text = await self._get_macos_sysctl_text(key)
+        try:
+            value = int(text)
+        except ValueError:
+            return 0
+        return max(0, value)
+
+    async def _get_macos_cpu_counts(self) -> tuple[int, int]:
+        physical = await self._get_macos_cpu_count("hw.physicalcpu")
+        logical = await self._get_macos_cpu_count("hw.logicalcpu")
+        return physical, logical
 
     @staticmethod
     def _get_cpu_name_generic() -> str:
@@ -261,17 +333,34 @@ class SystemDataSource:
     def _cpu_display(self, cpu_pct: float) -> str:
         try:
             freq = psutil.cpu_freq()
-            cores = psutil.cpu_count() or 1
+            physical = psutil.cpu_count(logical=False) or 0
+            logical = psutil.cpu_count(logical=True) or 0
+            cpu_count = self._format_cpu_count_text(physical, logical)
             mhz = 0.0
             if freq is not None:
                 mhz = float(freq.current or freq.max or 0.0)
             ghz = mhz / 1000.0 if mhz > 0 else 0.0
             if ghz > 0:
-                return f"{cpu_pct:.1f}% - {ghz:.2f}GHz [{cores} Core]"
-            return f"{cpu_pct:.1f}% [{cores} 核]"
+                return f"{cpu_pct:.1f}% - {ghz:.2f}GHz [{cpu_count}]"
+            return f"{cpu_pct:.1f}% [{cpu_count}]"
         except Exception as e:
             logger.debug(f"Failed to get CPU display info: {e}")
             return f"{cpu_pct:.1f}%"
+
+    @staticmethod
+    def _format_cpu_count_text(physical: int, logical: int) -> str:
+        if physical > 0 and logical > 0 and physical != logical:
+            return f"{physical} Cores / {logical} Threads"
+        if physical > 0:
+            return SystemDataSource._pluralize_cpu_unit(physical, "Core")
+        if logical > 0:
+            return SystemDataSource._pluralize_cpu_unit(logical, "Thread")
+        return "1 Thread"
+
+    @staticmethod
+    def _pluralize_cpu_unit(count: int, unit: str) -> str:
+        suffix = "" if count == 1 else "s"
+        return f"{count} {unit}{suffix}"
 
     def _cpu_percent(self) -> float:
         try:

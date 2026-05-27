@@ -6,6 +6,24 @@
 - AstrBotPluginDev 本地开发环境
 - 推荐使用 `uv`
 
+## 可选渲染与视觉回归依赖
+
+状态卡片运行时依赖 AstrBot 的 HTML/T2I 渲染能力。开发和排查模板问题时，建议准备一个本地 T2I 服务，常用地址为：
+
+```text
+http://localhost:8999/text2img
+```
+
+当前 T2I 回归测试会请求：
+
+```text
+http://localhost:8999/text2img/generate
+```
+
+若本地服务不可用，相关回归测试会跳过；这不代表模板视觉效果已经被真实渲染验证。
+
+HTML/CSS 布局、截图高度、背景装饰和图片裁剪问题，建议使用 Playwright 或等价浏览器自动化工具辅助检查。Playwright 不是插件运行时依赖，但属于模板视觉回归和 issue 复现的推荐工具。
+
 ## 本地代码位置
 
 插件通常位于：

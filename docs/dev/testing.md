@@ -2,12 +2,24 @@
 
 ## 基础命令
 
+优先在插件目录使用一键脚本运行全部测试与检查：
+
+```bash
+./tests/run_tests.sh
+```
+
+Windows PowerShell：
+
+```powershell
+.\tests\run_tests.ps1
+```
+
 | 场景 | 工作目录 | 命令 |
 | --- | --- | --- |
-| Python 格式化 | AstrBot 根目录 | `uv run ruff format data/plugins/astrbot_plugin_status` |
-| Python lint | AstrBot 根目录 | `uv run ruff check data/plugins/astrbot_plugin_status` |
-| 语法检查 | 插件目录 | `python3 -m compileall main.py core` |
-| pytest | 插件目录 | `pytest tests/ -v` |
+| Python lint | 插件目录 | `uv run ruff check main.py core tests` |
+| Python 格式检查 | 插件目录 | `uv run ruff format --check main.py core tests` |
+| 语法检查 | 插件目录 | `python3 -m compileall main.py core tests` |
+| pytest | 插件目录 | `pytest tests/ -v -o cache_dir=/private/tmp/astrbot_plugin_status_pytest_cache` |
 
 > [!TIP]
 > 这些是测试与检查命令，不是插件的独立运行命令。实际集成验证入口见 [`setup.md`](./setup.md#本地集成验证)。
@@ -34,3 +46,17 @@
 ## T2I 回归
 
 `tests/test_status_rendering.py` 会在 `localhost:8999` 可访问时调用本地 T2I 服务，检查输出图底部不再出现大块白色留白。若普通沙箱网络访问不到 Docker 服务，该测试会跳过；需要真实验证时用宿主机网络环境运行对应测试。
+
+本地 T2I 服务约定：
+
+| 项目 | 值 |
+| --- | --- |
+| 服务基址 | `http://localhost:8999/text2img` |
+| 测试接口 | `http://localhost:8999/text2img/generate` |
+| 生成图读取 | `http://localhost:8999/text2img/{image_id}` |
+
+## Playwright 辅助检查
+
+Playwright 不属于插件运行时依赖，但模板、截图和图片裁剪问题适合用浏览器自动化复现。修改 `templates/main.html` 或 `templates/res/css/style.css` 时，建议结合 Playwright 生成截图或检查元素布局，再配合 T2I 回归确认 AstrBot 渲染输出。
+
+若当前环境没有 Playwright 或浏览器依赖，至少运行一键脚本并记录 T2I 测试是否跳过；涉及视觉 issue 时应在具备 Playwright 或真实 T2I 服务的环境补做验证。
