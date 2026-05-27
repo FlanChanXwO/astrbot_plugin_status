@@ -2,6 +2,7 @@ from __future__ import annotations
 
 DEFAULT_BOT_NAME = "AstrBot"
 DEFAULT_DASHBOARD_NAME = "AstrBot"
+MAX_RENDERED_BOT_NAME_LENGTH = len("weixin_personal")
 DEFAULT_TIMEOUT = 30
 LLM_TIMEOUT = 60
 MAX_FILE_SIZE = 5 * 1024 * 1024

@@ -9,8 +9,32 @@ import requests
 from jinja2 import Template
 from PIL import Image
 
+from tests.support import (
+    create_core_package,
+    install_astrbot_stubs,
+    install_psutil_stub,
+    load_core_module,
+)
+
 ROOT = Path(__file__).resolve().parents[1]
 T2I_ENDPOINT = "http://localhost:8999/text2img/generate"
+PACKAGE_NAME = "status_core_rendering_tests"
+
+install_astrbot_stubs(include_event=True)
+install_psutil_stub()
+create_core_package(PACKAGE_NAME)
+
+load_core_module(PACKAGE_NAME, "constants")
+load_core_module(PACKAGE_NAME, "logger")
+load_core_module(PACKAGE_NAME, "models")
+load_core_module(PACKAGE_NAME, "utils")
+load_core_module(PACKAGE_NAME, "data_source")
+load_core_module(PACKAGE_NAME, "config_manager")
+load_core_module(PACKAGE_NAME, "bot_identity_resolver")
+html_render_module = load_core_module(PACKAGE_NAME, "html_render")
+
+HtmlRender = html_render_module.HtmlRender
+MAX_RENDERED_BOT_NAME_LENGTH = html_render_module.MAX_RENDERED_BOT_NAME_LENGTH
 
 
 def _metric(
@@ -90,6 +114,73 @@ def test_rendered_template_contains_paw_decorations() -> None:
 
     assert 'class="card"' in rendered
     assert rendered.count("bg-") >= 4
+
+
+def test_short_rendered_bot_name_is_not_truncated() -> None:
+    assert HtmlRender._truncate_middle("AstrBot", MAX_RENDERED_BOT_NAME_LENGTH) == (
+        "AstrBot"
+    )
+
+
+def test_long_rendered_bot_name_uses_middle_ellipsis() -> None:
+    name = "SuperLongAstrBotDisplayName"
+
+    truncated = HtmlRender._truncate_middle(name, MAX_RENDERED_BOT_NAME_LENGTH)
+
+    assert truncated == "SuperL...ayName"
+    assert len(truncated) == MAX_RENDERED_BOT_NAME_LENGTH
+    assert "..." in truncated
+
+
+@pytest.mark.asyncio
+async def test_render_payload_uses_truncated_bot_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeResolver:
+        async def resolve(self, _event: object) -> str:
+            return "SuperLongAstrBotDisplayName"
+
+    class FakeDataSource:
+        def get_metrics(self) -> list[object]:
+            return []
+
+        async def get_cpu_name(self) -> str:
+            return "CPU"
+
+        def get_os_name(self) -> str:
+            return "OS"
+
+        def get_project_version(self, _event: object) -> str:
+            return "AstrBot"
+
+        async def get_plugin_counts(self) -> int:
+            return 0
+
+        def get_net_speed_kbs(self) -> tuple[float, float]:
+            return 0.0, 0.0
+
+        def get_uptime_text(self) -> str:
+            return "00:00:00"
+
+    async def fake_html_render(*_args: object, **_kwargs: object) -> str:
+        return "image-url"
+
+    monkeypatch.setattr(html_render_module, "get_random_file_data_uri", lambda **_: "")
+    monkeypatch.setattr(html_render_module, "inline_fonts_in_css", lambda css, _: css)
+
+    renderer = HtmlRender(
+        context=SimpleNamespace(),
+        config_manager=SimpleNamespace(banner_paths=[]),
+        base_dir=ROOT,
+        plugin_data_dir=ROOT,
+        html_render=fake_html_render,
+        data_source=FakeDataSource(),
+        bot_identity_resolver=FakeResolver(),
+    )
+
+    _, payload = await renderer.build_render_data(SimpleNamespace())
+
+    assert payload.bot_name == "SuperL...ayName"
 
 
 def test_bottom_paw_decorations_remain_visible_inside_card() -> None:
