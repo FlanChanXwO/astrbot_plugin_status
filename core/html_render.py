@@ -17,7 +17,7 @@ from .constants import (
 )
 from .data_source import SystemDataSource
 from .models import StatusPayload
-from .utils import get_random_file_data_uri, inline_fonts_in_css
+from .utils import get_random_file_data_uri, inline_fonts_in_css, truncate_middle
 
 HtmlRenderCallable = Callable[..., Awaitable[str]]
 
@@ -141,7 +141,7 @@ CPU: {metrics_map.get("CPU", "N/A")}
 
         payload = StatusPayload(
             css_style=f"<style>{css}</style>",
-            bot_name=self._truncate_middle(bot_name, MAX_RENDERED_BOT_NAME_LENGTH),
+            bot_name=truncate_middle(bot_name, MAX_RENDERED_BOT_NAME_LENGTH),
             metrics=self.data_source.get_metrics(),
             cpu_name=await self.data_source.get_cpu_name(),
             os_name=self.data_source.get_os_name(),
@@ -153,19 +153,3 @@ CPU: {metrics_map.get("CPU", "N/A")}
             uptime=self.data_source.get_uptime_text(),
         )
         return html, payload
-
-    @staticmethod
-    def _truncate_middle(text: str, max_length: int) -> str:
-        """把过长文本截成中间省略，确保结果不超过 max_length。"""
-        if max_length <= 0:
-            return ""
-        if len(text) <= max_length:
-            return text
-        if max_length <= 3:
-            return "." * max_length
-
-        keep_length = max_length - 3
-        head_length = (keep_length + 1) // 2
-        tail_length = keep_length // 2
-        tail = text[-tail_length:] if tail_length else ""
-        return f"{text[:head_length]}...{tail}"

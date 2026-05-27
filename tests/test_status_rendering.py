@@ -34,7 +34,6 @@ load_core_module(PACKAGE_NAME, "bot_identity_resolver")
 html_render_module = load_core_module(PACKAGE_NAME, "html_render")
 
 HtmlRender = html_render_module.HtmlRender
-MAX_RENDERED_BOT_NAME_LENGTH = html_render_module.MAX_RENDERED_BOT_NAME_LENGTH
 
 
 def _metric(
@@ -114,22 +113,6 @@ def test_rendered_template_contains_paw_decorations() -> None:
 
     assert 'class="card"' in rendered
     assert rendered.count("bg-") >= 4
-
-
-def test_short_rendered_bot_name_is_not_truncated() -> None:
-    assert HtmlRender._truncate_middle("AstrBot", MAX_RENDERED_BOT_NAME_LENGTH) == (
-        "AstrBot"
-    )
-
-
-def test_long_rendered_bot_name_uses_middle_ellipsis() -> None:
-    name = "SuperLongAstrBotDisplayName"
-
-    truncated = HtmlRender._truncate_middle(name, MAX_RENDERED_BOT_NAME_LENGTH)
-
-    assert truncated == "SuperL...ayName"
-    assert len(truncated) == MAX_RENDERED_BOT_NAME_LENGTH
-    assert "..." in truncated
 
 
 @pytest.mark.asyncio
