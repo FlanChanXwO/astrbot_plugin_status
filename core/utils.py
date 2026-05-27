@@ -3,13 +3,36 @@ from __future__ import annotations
 import base64
 import ipaddress
 import os
+import random
 from pathlib import Path
 
-from astrbot.api import logger
 from astrbot.core.utils.io import download_image_by_url
 
-# 最大文件读取大小: 5MB
-MAX_FILE_SIZE = 5 * 1024 * 1024
+from .constants import MAX_FILE_SIZE
+from .logger import logger
+
+
+def list_files(directory: Path) -> list[Path]:
+    """Return direct child files from an existing directory."""
+    if not directory.exists():
+        return []
+    return [path for path in directory.iterdir() if path.is_file()]
+
+
+def truncate_middle(text: str, max_length: int) -> str:
+    """把过长文本截成中间省略，确保结果不超过 max_length。"""
+    if max_length <= 0:
+        return ""
+    if len(text) <= max_length:
+        return text
+    if max_length <= 3:
+        return "." * max_length
+
+    keep_length = max_length - 3
+    head_length = (keep_length + 1) // 2
+    tail_length = keep_length // 2
+    tail = text[-tail_length:] if tail_length else ""
+    return f"{text[:head_length]}...{tail}"
 
 
 def _is_safe_path(path: Path, base_dir: Path) -> bool:
@@ -128,6 +151,48 @@ def get_image_data_uri(
     except Exception as e:
         logger.error(f"读取或编码图片失败: {image_path}, 错误: {e}")
         return _placeholder_uri
+
+
+def get_random_file_data_uri(
+    *,
+    base_dir: Path,
+    plugin_data_dir: Path,
+    paths: list[str] | None = None,
+    directory: Path | None = None,
+    is_user_path: bool = False,
+    log_prefix: str | None = None,
+) -> str:
+    """Pick one configured path or directory file and return it as a data URI."""
+    candidates: list[Path | str] = list(paths or [])
+    if directory is not None:
+        candidates.extend(list_files(directory))
+
+    if not candidates:
+        return ""
+
+    chosen = random.choice(candidates)
+    if log_prefix:
+        display_path = chosen
+        if isinstance(chosen, Path):
+            try:
+                display_path = chosen.relative_to(base_dir)
+            except ValueError:
+                display_path = chosen
+        logger.info(f"{log_prefix}: {display_path}")
+
+    image_path: Path | str = chosen
+    if isinstance(chosen, Path) and not is_user_path:
+        try:
+            image_path = chosen.relative_to(base_dir)
+        except ValueError:
+            image_path = chosen
+
+    return get_image_data_uri(
+        image_path,
+        base_dir,
+        plugin_data_dir,
+        is_user_path=is_user_path,
+    )
 
 
 async def image_url_to_base64(

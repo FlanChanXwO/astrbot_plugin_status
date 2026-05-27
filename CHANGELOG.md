@@ -1,5 +1,37 @@
 # Changelog
 
+## [2.0.0] - 2026-05-27
+
+### Changed
+
+- 重构插件架构：`main.py` 仅保留 AstrBot 插件入口、生命周期和命令注册职责，主要业务逻辑迁移到 `core/` 包。
+- 新增 `StatusService` 作为状态命令和 LLM tool 的业务路由层，负责消息发送、LLM 分析分支和 provider 选择。
+- 新增 `HtmlRender` 作为状态图渲染层，统一负责模板读取、CSS/字体/图片资源处理、状态数据拼接、`StatusPayload` 构建和文本摘要生成。
+- 将配置读取集中到 `ConfigManager`，入口和业务模块不再散落直接读取原始配置。
+- 将常量集中到 `core/constants.py`，避免命令名、工具描述、渲染选项和限制值分散维护。
+- 状态图渲染链路现在按 `main.py -> StatusService -> HtmlRender -> SystemDataSource` 分层，便于测试和后续维护。
+
+### Added
+
+- 新增 `core/logger.py`，统一包装 AstrBot logger，并为插件日志添加 `[astrbot_plugin_status]` 前缀。
+- 新增 `BotIdentityResolver`，集中解析机器人自身显示名，并支持 `kook`、`mattermost`、`misskey`、`discord`、`telegram`、`aiocqhttp` 的平台差异；其中 `aiocqhttp` 通过 OneBot `get_login_info.nickname` 获取机器人昵称。
+- 新增 `auto_use_current_name` 配置支持：启用后优先获取机器人自身名称或标识，无法获取名称时回退到平台实例 ID，最后回退到手动配置的 `bot_name`。
+- 新增架构边界测试，防止渲染数据拼接重新回到 `StatusService` 或 `main.py`。
+- 新增 T2I 回归测试，用于验证状态图底部不再出现大块白色留白。
+- 新增项目文档目录，记录架构、配置、开发、测试和维护约束。
+- 新增 `AGENTS.md` 和 `CLAUDE.md`，为协作 agent 提供精简项目规则入口。
+
+### Fixed
+
+- 修复背景 paw 装饰在 T2I full-page 截图中被计入页面滚动高度后导致底部异常留白的问题。
+- 修复部分 paw 装饰因布局位置调整不当导致从状态图中消失的问题。
+- 修复 `auto_use_current_name` 误把命令发送者名称当作机器人名称的问题。
+- 修复 macOS 下 Apple Silicon 芯片名称不准确；CPU 详情行仅显示芯片名称，CPU 指标行区分物理核和线程数且单位文本统一使用英文。
+
+### Removed
+
+- 移除根目录下分散的业务模块文件，相关代码统一迁移到 `core/` 包。
+
 ## [1.0.4] - 2026-05-24
 
 ### Fixed

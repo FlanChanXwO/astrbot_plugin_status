@@ -78,21 +78,42 @@
 
 | 配置项 | 类型 | 说明 | 默认值 |
 |--------|------|------|--------|
+| `auto_use_current_name` | 布尔值 | 自动获取机器人自身名称或标识；取不到时回退到平台实例 ID，再取不到时使用 `bot_name` | `true` |
 | `bot_name` | 字符串 | 显示在状态卡片上的机器人名称 | `AstrBot` |
 | `banner_image` | 文件列表 | 自定义状态背景图（支持 png/jpg/jpeg），可上传多张随机展示 | `[]` |
 | `enable_llm_analysis` | 布尔值 | 是否在返回状态图后调用 LLM 进行智能分析 | `false` |
-| `llm_analysis_prompt` | 字符串 | LLM 分析时使用的提示词 | `请简要分析这张系统状态图片...` |
+| `vision_provider_id` | 字符串 | 识图模型 provider，留空时优先使用 AstrBot 全局图片描述模型 | `""` |
+| `comment_provider_id` | 字符串 | 文本转述 provider，留空时使用当前会话模型 | `""` |
+| `vision_prompt` | 字符串 | 发送给视觉模型的提示词 | `把图片中各种指标用文字描述出来` |
+| `comment_prompt` | 字符串 | 发送给文本模型的提示词，使用 `{description}` 表示识图结果 | 见 `_conf_schema.json` |
 
 ### 配置示例
 
 ```json
 {
+  "auto_use_current_name": false,
   "bot_name": "我的Bot",
   "banner_image": ["/path/to/banner1.png", "/path/to/banner2.jpg"],
   "enable_llm_analysis": true,
-  "llm_analysis_prompt": "请分析系统状态，指出是否有异常"
+  "vision_provider_id": "",
+  "comment_provider_id": "",
+  "vision_prompt": "请描述这张系统状态图片中的关键指标",
+  "comment_prompt": "请根据以下状态描述判断是否异常：{description}"
 }
 ```
+
+### 自动获取名称支持范围
+
+启用 `auto_use_current_name` 后，状态卡片会优先显示机器人自身名称或账号标识，不同平台适配器暴露的信息不同，无法取得机器人显示名时会回退到 `event.get_platform_id()`；若平台实例 ID 也不可用，则使用手动配置的 `bot_name`。状态卡片上的名称过长时会在中间使用 `...` 省略，文本摘要仍保留完整名称。
+
+| 平台 | 优先读取 | 回退规则 |
+|------|----------|----------|
+| kook | `client.bot_nickname`，其次 `client.bot_username` | 取不到名称时使用 `event.get_platform_id()`，再取不到时使用 `bot_name` |
+| mattermost | `bot_username` | 取不到名称时使用 `event.get_platform_id()`，再取不到时使用 `bot_name` |
+| misskey | `_bot_username` | 取不到名称时使用 `event.get_platform_id()`，再取不到时使用 `bot_name` |
+| discord | `client.user.display_name`，其次 `client.user.name` / `client.user.global_name` | 取不到名称时使用 `event.get_platform_id()`，再取不到时使用 `bot_name` |
+| telegram | `client.username`，其次 `application.bot.username` | 取不到名称时使用 `event.get_platform_id()`，再取不到时使用 `bot_name` |
+| aiocqhttp | OneBot `get_login_info.nickname` | 调用失败或昵称为空时使用 `event.get_platform_id()`，再取不到时使用 `bot_name` |
 
 ---
 
