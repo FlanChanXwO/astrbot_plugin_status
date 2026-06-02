@@ -6,10 +6,10 @@
 
 **一个用于展示系统状态的简易可爱插件，支持生成可视化的状态卡片。**
 
-[![License: APGL](https://img.shields.io/badge/License-APGL-blue.svg)](https://opensource.org/licenses/agpl-3-0)
+[![License: AGPL](https://img.shields.io/badge/License-AGPL-blue.svg)](https://opensource.org/licenses/agpl-3-0)
 ![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![AstrBot](https://img.shields.io/badge/AstrBot-%E2%89%A54.10.4-green)
-![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20MacOS-lightgrey)
 [![Last Commit](https://img.shields.io/github/last-commit/FlanChanXwO/astrbot_plugin_status)](https://github.com/FlanChanXwO/astrbot_plugin_status/commits/master)
 
 </div>
@@ -29,12 +29,12 @@
         <sub>状态卡片</sub>
       </td>
       <td align="center">
-        <img src="https://raw.githubusercontent.com/FlanChanXwO/astrbot_plugin_status/master/assets/preview_2.png" width="400" alt="状态卡片预览4"/>
+        <img src="https://raw.githubusercontent.com/FlanChanXwO/astrbot_plugin_status/master/assets/preview_2.png" width="400" alt="状态卡片预览2"/>
         <br/>
         <sub>LLM 智能分析效果</sub>
       </td>
       <td align="center">
-        <img src="https://raw.githubusercontent.com/FlanChanXwO/astrbot_plugin_status/master/assets/preview_3.png" width="400" alt="状态卡片预览2"/>
+        <img src="https://raw.githubusercontent.com/FlanChanXwO/astrbot_plugin_status/master/assets/preview_3.png" width="400" alt="状态卡片预览3"/>
         <br/>
         <sub>自定义背景图效果</sub>
       </td>
@@ -65,7 +65,7 @@
 1. 克隆本仓库到 AstrBot 的插件目录：
    ```bash
    cd AstrBot/data/plugins
-   git clone https://github.com/yourusername/astrbot_plugin_status.git
+   git clone https://github.com/FlanChanXwO/astrbot_plugin_status.git
    ```
 
 2. 重启 AstrBot 或重载插件
@@ -152,6 +152,6 @@
 
 ## 📄 开源协议
 
-本项目基于 [APGL](LICENSE) 协议开源。
+本项目基于 [AGPL](LICENSE) 协议开源。
 
 ---
