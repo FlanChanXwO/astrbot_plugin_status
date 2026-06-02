@@ -24,12 +24,12 @@
   <table>
     <tr>
       <td align="center">
-        <img src="https://raw.githubusercontent.com/FlanChanXwO/astrbot_plugin_status/master/assets/preview_1.png" width="400" alt="状态卡片预览1"/>
+        <img src="https://raw.githubusercontent.com/FlanChanXwO/astrbot_plugin_status/master/assets/preview_2.png" width="400" alt="状态卡片预览4"/>
         <br/>
         <sub>状态卡片</sub>
       </td>
       <td align="center">
-        <img src="https://raw.githubusercontent.com/FlanChanXwO/astrbot_plugin_status/master/assets/preview_2.png" width="400" alt="状态卡片预览4"/>
+        <img src="https://raw.githubusercontent.com/FlanChanXwO/astrbot_plugin_status/master/assets/preview_1.png" width="400" alt="状态卡片预览1"/>
         <br/>
         <sub>LLM 智能分析效果</sub>
       </td>
