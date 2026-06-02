@@ -9,7 +9,7 @@
 [![License: AGPL](https://img.shields.io/badge/License-AGPL-blue.svg)](https://opensource.org/licenses/agpl-3-0)
 ![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![AstrBot](https://img.shields.io/badge/AstrBot-%E2%89%A54.10.4-green)
-![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20MacOS-lightgrey)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)
 [![Last Commit](https://img.shields.io/github/last-commit/FlanChanXwO/astrbot_plugin_status)](https://github.com/FlanChanXwO/astrbot_plugin_status/commits/master)
 
 </div>
