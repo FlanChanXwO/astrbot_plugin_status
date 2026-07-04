@@ -281,11 +281,16 @@ def build_alert_text(
     return (
         "本月流量提醒\n"
         f"月份: {usage.month}\n"
-        f"阈值: {threshold_gb:.1f} GB\n"
+        f"阈值: {format_gb_value(threshold_gb)} GB\n"
         f"当前合计: {format_bytes(usage.total_bytes)}\n"
         f"上传: {format_bytes(usage.upload_bytes)}\n"
         f"下载: {format_bytes(usage.download_bytes)}"
     )
+
+
+def format_gb_value(value: float) -> str:
+    text = f"{max(0.0, float(value)):.6f}".rstrip("0").rstrip(".")
+    return text or "0"
 
 
 async def cancel_task(task: asyncio.Task[object] | None) -> None:

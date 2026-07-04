@@ -27,7 +27,9 @@ traffic_module = load_core_module(PACKAGE_NAME, "traffic_usage")
 
 TrafficMonitorConfig = config_module.TrafficMonitorConfig
 TrafficUsageRecorder = traffic_module.TrafficUsageRecorder
+MonthlyTrafficUsage = traffic_module.MonthlyTrafficUsage
 MONTHLY_TRAFFIC_STATE_FILE = traffic_module.MONTHLY_TRAFFIC_STATE_FILE
+build_alert_text = traffic_module.build_alert_text
 
 pytestmark = pytest.mark.asyncio
 
@@ -188,3 +190,16 @@ async def test_alert_is_sent_once_per_month(tmp_path: Path) -> None:
     assert sent_alerts[0][0] == "aiocqhttp:group:123456"
     assert "本月流量提醒" in sent_alerts[0][1]
     assert "2026-07" in sent_alerts[0][1]
+
+
+async def test_alert_text_preserves_decimal_threshold() -> None:
+    text = build_alert_text(
+        MonthlyTrafficUsage(
+            month="2026-07",
+            upload_bytes=10,
+            download_bytes=20,
+        ),
+        threshold_gb=0.02,
+    )
+
+    assert "阈值: 0.02 GB" in text
