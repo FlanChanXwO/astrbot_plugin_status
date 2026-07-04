@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 from astrbot.api import AstrBotConfig
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, StarTools
+from astrbot.core.message.message_event_result import MessageChain
 from astrbot.core.provider.register import llm_tools
 
-from .core import ConfigManager, HtmlRender, StatusService
+from .core import ConfigManager, HtmlRender, StatusService, TrafficUsageRecorder
 from .core.constants import STATUS_TOOL_DESCRIPTION, STATUS_TOOL_NAME
+from .core.traffic_usage import cancel_task
 
 
 class StatusPlugin(Star):
@@ -16,16 +19,24 @@ class StatusPlugin(Star):
 
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
+        self.context = context
         self.base_dir = Path(__file__).parent
         self.config_manager = ConfigManager(config)
         self.config_manager.load()
         self.plugin_data_dir = StarTools.get_data_dir(self.name)
+        self.traffic_recorder = TrafficUsageRecorder(
+            data_dir=self.plugin_data_dir,
+            config=self.config_manager.traffic_monitor,
+            send_alert=self._send_traffic_alert,
+        )
+        self._traffic_task: asyncio.Task[object] | None = None
         self.html_renderer = HtmlRender(
             context=context,
             config_manager=self.config_manager,
             base_dir=self.base_dir,
             plugin_data_dir=self.plugin_data_dir,
             html_render=self.html_render,
+            traffic_recorder=self.traffic_recorder,
         )
         self.status_service = StatusService(
             context=context,
@@ -44,13 +55,24 @@ class StatusPlugin(Star):
         tool = llm_tools.get_func(STATUS_TOOL_NAME)
         if tool:
             tool.handler_module_path = __name__
+        if self.config_manager.traffic_monitor.enabled:
+            self._traffic_task = asyncio.create_task(
+                self.traffic_recorder.run_forever()
+            )
 
     async def terminate(self) -> None:
         """Unregister LLM tool on plugin disable."""
         llm_tools.remove_func(STATUS_TOOL_NAME)
+        await cancel_task(self._traffic_task)
+        self._traffic_task = None
+        await self.traffic_recorder.close()
 
     @filter.command("status", alias={"状态"})
     async def show_status(self, event: AstrMessageEvent):
         """返回状态图片"""
         async for result in self.status_service.show_status(event):
             yield result
+
+    async def _send_traffic_alert(self, umo: str, text: str) -> None:
+        """向配置的 UMO 发送当月流量提醒。"""
+        await self.context.send_message(umo, MessageChain().message(text))

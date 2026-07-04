@@ -20,6 +20,37 @@
       "jpeg"
     ]
   },
+  "traffic_monitor": {
+    "type": "object",
+    "description": "流量统计",
+    "hint": "记录插件运行期间观察到的当月整机网络流量，并可在达到阈值后发送提醒。",
+    "items": {
+      "enabled": {
+        "type": "bool",
+        "description": "当月流量统计",
+        "hint": "开启后后台每 300 秒采样一次网络计数器，状态卡会显示本月上传/下载累计。",
+        "default": true
+      },
+      "alert_enabled": {
+        "type": "bool",
+        "description": "流量提醒",
+        "hint": "开启后，当本月上传和下载合计达到阈值时，每月最多提醒一次。",
+        "default": false
+      },
+      "alert_threshold_gb": {
+        "type": "float",
+        "description": "提醒阈值（GB）",
+        "hint": "按上传 + 下载合计计算，单位固定为 GB。",
+        "default": 100.0
+      },
+      "alert_target_umo": {
+        "type": "string",
+        "description": "提醒目标 UMO",
+        "hint": "填写 platform_id:message_type:session_id，例如 aiocqhttp:group:123456。留空时不会主动发送提醒。",
+        "default": ""
+      }
+    }
+  },
   "enable_llm_analysis": {
     "type": "bool",
     "description": "LLM 分析",

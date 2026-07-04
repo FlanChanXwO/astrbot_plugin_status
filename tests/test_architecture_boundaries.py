@@ -28,6 +28,17 @@ def test_html_render_owns_status_data_and_rendering() -> None:
     assert "build_render_data" not in init_source
 
 
+def test_traffic_usage_owns_monthly_persistence() -> None:
+    traffic_source = (ROOT / "core/traffic_usage.py").read_text(encoding="utf-8-sig")
+    main_source = (ROOT / "main.py").read_text(encoding="utf-8-sig")
+
+    assert "class TrafficUsageRecorder" in traffic_source
+    assert "psutil.net_io_counters" in traffic_source
+    assert "MONTHLY_TRAFFIC_STATE_FILE" in traffic_source
+    assert "monthly_traffic.json" not in main_source
+    assert "net_io_counters" not in main_source
+
+
 def test_core_modules_use_prefixed_logger() -> None:
     logger_source = (ROOT / "core/logger.py").read_text(encoding="utf-8-sig")
 

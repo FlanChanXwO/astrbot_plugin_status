@@ -17,6 +17,8 @@ from .constants import (
 )
 from .data_source import SystemDataSource
 from .models import StatusPayload
+from .logger import logger
+from .traffic_usage import MonthlyTrafficUsage, TrafficUsageRecorder
 from .utils import get_random_file_data_uri, inline_fonts_in_css, truncate_middle
 
 HtmlRenderCallable = Callable[..., Awaitable[str]]
@@ -35,6 +37,7 @@ class HtmlRender:
         html_render: HtmlRenderCallable,
         data_source: SystemDataSource | None = None,
         bot_identity_resolver: BotIdentityResolver | None = None,
+        traffic_recorder: TrafficUsageRecorder | None = None,
     ) -> None:
         self.context = context
         self.config_manager = config_manager
@@ -53,6 +56,7 @@ class HtmlRender:
             context,
             config_manager,
         )
+        self.traffic_recorder = traffic_recorder
 
     async def render_status_image(self, event: AstrMessageEvent) -> str:
         """构建状态卡数据，并调用 AstrBot html_render 生成图片 URL。"""
@@ -75,6 +79,12 @@ class HtmlRender:
         uptime = self.data_source.get_uptime_text()
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         bot_name = await self.bot_identity_resolver.resolve(event)
+        monthly_traffic = await self._sample_monthly_traffic()
+        monthly_traffic_line = (
+            f"\n本月流量: {monthly_traffic.summary_text}"
+            if monthly_traffic is not None
+            else ""
+        )
 
         metrics_map = {m.label: m.value for m in metrics}
         return f"""\
@@ -101,7 +111,7 @@ CPU: {metrics_map.get("CPU", "N/A")}
 网络与插件
 ----------
 网络速度: ↑{upload_kbs:.1f} KB/s ↓{download_kbs:.1f} KB/s
-已加载插件: {plugin_count} 个"""
+已加载插件: {plugin_count} 个{monthly_traffic_line}"""
 
     async def build_render_data(
         self, event: AstrMessageEvent
@@ -138,6 +148,7 @@ CPU: {metrics_map.get("CPU", "N/A")}
         upload_kbs, download_kbs = self.data_source.get_net_speed_kbs()
         plugin_count_str = str(await self.data_source.get_plugin_counts())
         bot_name = await self.bot_identity_resolver.resolve(event)
+        monthly_traffic = await self._sample_monthly_traffic()
 
         payload = StatusPayload(
             css_style=f"<style>{css}</style>",
@@ -149,7 +160,22 @@ CPU: {metrics_map.get("CPU", "N/A")}
             plugin_count=plugin_count_str,
             upload_speed=f"{upload_kbs:.1f}",
             download_speed=f"{download_kbs:.1f}",
+            monthly_traffic=monthly_traffic.card_text
+            if monthly_traffic is not None
+            else "",
             dashboard_name=DEFAULT_DASHBOARD_NAME,
             uptime=self.data_source.get_uptime_text(),
         )
         return html, payload
+
+    async def _sample_monthly_traffic(self) -> MonthlyTrafficUsage | None:
+        traffic_config = getattr(self.config_manager, "traffic_monitor", None)
+        if not getattr(traffic_config, "enabled", False):
+            return None
+        if self.traffic_recorder is None:
+            return None
+        try:
+            return await self.traffic_recorder.sample()
+        except Exception:
+            logger.exception("当月流量统计采样失败")
+            return None

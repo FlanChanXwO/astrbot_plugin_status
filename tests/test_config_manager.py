@@ -45,6 +45,10 @@ def test_config_manager_loads_defaults() -> None:
     assert manager.auto_use_current_name is True
     assert manager.bot_name == DEFAULT_BOT_NAME
     assert manager.banner_paths == []
+    assert manager.traffic_monitor.enabled is True
+    assert manager.traffic_monitor.alert_enabled is False
+    assert manager.traffic_monitor.alert_threshold_gb == 100.0
+    assert manager.traffic_monitor.alert_target_umo == ""
     assert manager.llm_analysis.enabled is False
     assert manager.llm_analysis.vision_provider_id == ""
     assert manager.llm_analysis.comment_provider_id == ""
@@ -63,6 +67,12 @@ def test_config_manager_normalizes_valid_values() -> None:
                 123,
                 "/tmp/banner-b.jpg",
             ],
+            "traffic_monitor": {
+                "enabled": "false",
+                "alert_enabled": "true",
+                "alert_threshold_gb": "42.5",
+                "alert_target_umo": "  aiocqhttp:group:123456  ",
+            },
             "enable_llm_analysis": "true",
             "vision_provider_id": "  vlm-provider  ",
             "comment_provider_id": "  text-provider  ",
@@ -75,6 +85,10 @@ def test_config_manager_normalizes_valid_values() -> None:
     assert manager.auto_use_current_name is False
     assert manager.bot_name == "酒狐"
     assert manager.banner_paths == ["/tmp/banner-a.png", "/tmp/banner-b.jpg"]
+    assert manager.traffic_monitor.enabled is False
+    assert manager.traffic_monitor.alert_enabled is True
+    assert manager.traffic_monitor.alert_threshold_gb == 42.5
+    assert manager.traffic_monitor.alert_target_umo == "aiocqhttp:group:123456"
     assert manager.llm_analysis.enabled is True
     assert manager.llm_analysis.vision_provider_id == "vlm-provider"
     assert manager.llm_analysis.comment_provider_id == "text-provider"
@@ -88,6 +102,12 @@ def test_config_manager_falls_back_for_invalid_types() -> None:
             "auto_use_current_name": object(),
             "bot_name": 123,
             "banner_image": "/tmp/banner.png",
+            "traffic_monitor": {
+                "enabled": object(),
+                "alert_enabled": object(),
+                "alert_threshold_gb": -1,
+                "alert_target_umo": [],
+            },
             "enable_llm_analysis": object(),
             "vision_provider_id": [],
             "comment_provider_id": {},
@@ -100,6 +120,10 @@ def test_config_manager_falls_back_for_invalid_types() -> None:
     assert manager.auto_use_current_name is True
     assert manager.bot_name == DEFAULT_BOT_NAME
     assert manager.banner_paths == []
+    assert manager.traffic_monitor.enabled is True
+    assert manager.traffic_monitor.alert_enabled is False
+    assert manager.traffic_monitor.alert_threshold_gb == 100.0
+    assert manager.traffic_monitor.alert_target_umo == ""
     assert manager.llm_analysis.enabled is False
     assert manager.llm_analysis.vision_provider_id == ""
     assert manager.llm_analysis.comment_provider_id == ""

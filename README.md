@@ -48,6 +48,7 @@
 
 - 🖼️ **精美状态卡片** - 可视化展示 CPU、内存、磁盘、网络等系统状态
 - 🎨 **自定义背景** - 支持上传自定义背景图片，打造个性化状态卡片
+- 📡 **当月流量统计** - 记录插件运行期间观察到的本月上传/下载流量，可配置阈值提醒
 - 🤖 **LLM 智能分析** - 可选开启 AI 分析，自动解读系统状态
 - ⚡ **性能优化** - 静态资源缓存、轻量采样，降低系统开销
 - 🌐 **多平台支持** - 适配 AstrBot 支持的所有消息平台
@@ -81,6 +82,7 @@
 | `auto_use_current_name` | 布尔值 | 自动获取机器人自身名称或标识；取不到时回退到平台实例 ID，再取不到时使用 `bot_name` | `true` |
 | `bot_name` | 字符串 | 显示在状态卡片上的机器人名称 | `AstrBot` |
 | `banner_image` | 文件列表 | 自定义状态背景图（支持 png/jpg/jpeg），可上传多张随机展示 | `[]` |
+| `traffic_monitor` | 对象 | 流量统计设置，包含当月统计开关、提醒开关、提醒阈值和提醒目标 UMO | 见 `_conf_schema.json` |
 | `enable_llm_analysis` | 布尔值 | 是否在返回状态图后调用 LLM 进行智能分析 | `false` |
 | `vision_provider_id` | 字符串 | 识图模型 provider，留空时优先使用 AstrBot 全局图片描述模型 | `""` |
 | `comment_provider_id` | 字符串 | 文本转述 provider，留空时使用当前会话模型 | `""` |
@@ -94,6 +96,12 @@
   "auto_use_current_name": false,
   "bot_name": "我的Bot",
   "banner_image": ["/path/to/banner1.png", "/path/to/banner2.jpg"],
+  "traffic_monitor": {
+    "enabled": true,
+    "alert_enabled": false,
+    "alert_threshold_gb": 100.0,
+    "alert_target_umo": ""
+  },
   "enable_llm_analysis": true,
   "vision_provider_id": "",
   "comment_provider_id": "",
@@ -140,6 +148,12 @@
 1. 在配置中开启 `enable_llm_analysis`
 2. 确保已配置 LLM 提供商
 3. 发送 `/状态` 后，Bot 会先发送状态图片，然后自动返回 AI 分析结果
+
+### 当月流量统计
+
+默认开启后，插件会在后台每 300 秒采样一次系统网络计数器，并在状态卡片详情框中显示本月上传和下载累计。统计从插件启用后的首次采样开始；如果 AstrBot 未运行、系统重启或网络计数器重置，中间流量无法补记。
+
+如需提醒，在 `traffic_monitor` 中开启 `alert_enabled`，设置 `alert_threshold_gb`，并填写提醒目标 `alert_target_umo`（格式如 `aiocqhttp:group:123456`）。当本月上传和下载合计达到阈值时，每个自然月最多提醒一次。
 
 
 ### 自定义背景图

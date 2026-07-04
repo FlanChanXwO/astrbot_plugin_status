@@ -5,9 +5,11 @@
 ```text
 main.py
   -> core.ConfigManager
+  -> core.TrafficUsageRecorder
   -> core.HtmlRender
        -> core.BotIdentityResolver
        -> core.SystemDataSource
+       -> core.TrafficUsageRecorder
        -> core.utils
        -> core.models.StatusPayload
        -> AstrBot html_render()
@@ -21,6 +23,7 @@ main.py
 `main.py` 保留插件入口职责：
 
 - 初始化路径、`ConfigManager`、`HtmlRender` 和 `StatusService`
+- 初始化 `TrafficUsageRecorder`，并在插件启停时启动或取消后台采样任务
 - 注册和注销 `astrbot_get_system_status`
 - 将 `/status`、`/状态` 事件转发给 `StatusService`
 
@@ -42,6 +45,7 @@ main.py
 - 管理模板、CSS、默认 Banner 和角色图片资源路径
 - 调用 `BotIdentityResolver` 解析状态卡片展示的机器人名称
 - 调用 `SystemDataSource` 采集状态指标
+- 调用 `TrafficUsageRecorder` 更新和读取当月流量统计
 - 构建 `StatusPayload` 和 LLM tool 文本摘要
 - 调用 AstrBot `html_render()` 生成图片 URL
 
@@ -60,12 +64,24 @@ macOS 的 CPU 详情名称优先从 `system_profiler SPHardwareDataType` 的 `Ch
 
 网络速度是基于两次采样之间的差值计算的，因此首次调用通常返回 `0.0`。
 
+## `core/traffic_usage.py`
+
+`TrafficUsageRecorder` 负责插件运行期间观察到的当月流量累计：
+
+- 使用 `psutil.net_io_counters()` 读取整机上传/下载累计字节数
+- 使用独立采样基线，不复用 `SystemDataSource.get_net_speed_kbs()` 的瞬时网速基线
+- 将当前自然月累计、上次采样基线和本月提醒状态写入插件数据目录的 `monthly_traffic.json`
+- 月份变化、系统重启或计数器回退时重新建立基线，不补记无法观察到的流量
+- 当配置开启提醒且上传+下载合计达到阈值时，每个自然月最多向配置的 UMO 发送一次提醒
+
 `HtmlRender.build_render_data()` 负责把模板、CSS、图片资源和系统数据组装为：
 
 - HTML 模板文本
 - `StatusPayload`
 
 它不负责发送消息；对外业务代码通过 `HtmlRender.render_status_image()` 和 `HtmlRender.build_status_text()` 使用渲染能力，不直接拼接状态图数据。状态图 payload 中的机器人名称会按 `core.constants.MAX_RENDERED_BOT_NAME_LENGTH` 做中间省略，文本摘要仍使用完整名称。
+
+状态图 payload 中的当月流量由 `TrafficUsageRecorder` 格式化为详情框的 `Traffic` 行；关闭流量统计时该行不渲染。
 
 ## `core/utils.py`
 
@@ -102,8 +118,9 @@ AstrBot 的 OneBot v11 平台标识是 `aiocqhttp`，不是 `aiohttpcq`；文档
 1. 命令或 tool handler 进入 `StatusService`
 2. `StatusService` 调用 `HtmlRender.render_status_image()`
 3. `HtmlRender` 使用 `SystemDataSource` 拼接 HTML 与 payload
-4. `HtmlRender` 调用 AstrBot `html_render()` 生成图片 URL
-5. 命令路径返回图片；LLM tool 路径发送图片并通过 `HtmlRender.build_status_text()` 返回文本状态摘要
+4. `HtmlRender` 触发一次当月流量采样并把当前累计写入 payload
+5. `HtmlRender` 调用 AstrBot `html_render()` 生成图片 URL
+6. 命令路径返回图片；LLM tool 路径发送图片并通过 `HtmlRender.build_status_text()` 返回文本状态摘要
 
 ## 模板边界
 
