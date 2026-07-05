@@ -20,6 +20,20 @@ BYTES_PER_MB = BYTES_PER_KB**2
 BYTES_PER_GB = BYTES_PER_KB**3
 BYTES_PER_TB = BYTES_PER_KB**4
 STATE_SCHEMA_VERSION = 1
+MONTH_ABBREVIATIONS = (
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+)
 
 AlertSender = Callable[[str, str], Awaitable[None]]
 CounterReader = Callable[[], Any]
@@ -41,7 +55,8 @@ class MonthlyTrafficUsage:
     @property
     def card_text(self) -> str:
         return (
-            f"Month ↑ {format_bytes(self.upload_bytes)} | "
+            f"{format_month_abbreviation(self.month)}  ↑ "
+            f"{format_bytes(self.upload_bytes)} | "
             f"↓ {format_bytes(self.download_bytes)}"
         )
 
@@ -258,6 +273,16 @@ class TrafficUsageRecorder:
 
 def month_key(value: dt.datetime) -> str:
     return value.strftime("%Y-%m")
+
+
+def format_month_abbreviation(month: str) -> str:
+    try:
+        month_number = int(month.split("-", maxsplit=1)[1])
+    except (IndexError, ValueError):
+        return "Month"
+    if not 1 <= month_number <= 12:
+        return "Month"
+    return MONTH_ABBREVIATIONS[month_number - 1]
 
 
 def format_bytes(value: int) -> str:

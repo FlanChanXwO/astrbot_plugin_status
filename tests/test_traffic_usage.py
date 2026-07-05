@@ -203,3 +203,13 @@ async def test_alert_text_preserves_decimal_threshold() -> None:
     )
 
     assert "阈值: 0.02 GB" in text
+
+
+async def test_card_text_uses_month_abbreviation() -> None:
+    usage = MonthlyTrafficUsage(
+        month="2026-07",
+        upload_bytes=1024**3,
+        download_bytes=2 * 1024**3,
+    )
+
+    assert usage.card_text == "Jul  ↑ 1.0 GB | ↓ 2.0 GB"

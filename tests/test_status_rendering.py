@@ -69,7 +69,7 @@ def _render_payload() -> tuple[str, dict[str, object]]:
         "plugin_count": "12",
         "upload_speed": "1.2",
         "download_speed": "3.4",
-        "monthly_traffic": "Month ↑ 1.0 GB | ↓ 2.0 GB",
+        "monthly_traffic": "Jul  ↑ 1.0 GB | ↓ 2.0 GB",
         "dashboard_name": "AstrBot",
         "uptime": "00:12:34",
     }
@@ -115,7 +115,7 @@ def test_rendered_template_contains_paw_decorations() -> None:
     assert 'class="card"' in rendered
     assert rendered.count("bg-") >= 4
     assert "Traffic" in rendered
-    assert "Month ↑ 1.0 GB | ↓ 2.0 GB" in rendered
+    assert "Jul  ↑ 1.0 GB | ↓ 2.0 GB" in rendered
 
 
 @pytest.mark.asyncio
@@ -151,7 +151,7 @@ async def test_render_payload_uses_truncated_bot_name(
     class FakeTrafficRecorder:
         async def sample(self) -> SimpleNamespace:
             return SimpleNamespace(
-                card_text="Month ↑ 1.0 MB | ↓ 2.0 MB",
+                card_text="Jul  ↑ 1.0 MB | ↓ 2.0 MB",
                 summary_text="合计 3.0 MB，上传 1.0 MB，下载 2.0 MB",
             )
 
@@ -178,7 +178,7 @@ async def test_render_payload_uses_truncated_bot_name(
     _, payload = await renderer.build_render_data(SimpleNamespace())
 
     assert payload.bot_name == "SuperL...ayName"
-    assert payload.monthly_traffic == "Month ↑ 1.0 MB | ↓ 2.0 MB"
+    assert payload.monthly_traffic == "Jul  ↑ 1.0 MB | ↓ 2.0 MB"
 
 
 @pytest.mark.asyncio
@@ -218,7 +218,7 @@ async def test_status_text_includes_monthly_traffic() -> None:
     class FakeTrafficRecorder:
         async def sample(self) -> SimpleNamespace:
             return SimpleNamespace(
-                card_text="Month ↑ 1.0 MB | ↓ 2.0 MB",
+                card_text="Jul  ↑ 1.0 MB | ↓ 2.0 MB",
                 summary_text="合计 3.0 MB，上传 1.0 MB，下载 2.0 MB",
             )
 

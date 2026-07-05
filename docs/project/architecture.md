@@ -81,7 +81,7 @@ macOS 的 CPU 详情名称优先从 `system_profiler SPHardwareDataType` 的 `Ch
 
 它不负责发送消息；对外业务代码通过 `HtmlRender.render_status_image()` 和 `HtmlRender.build_status_text()` 使用渲染能力，不直接拼接状态图数据。状态图 payload 中的机器人名称会按 `core.constants.MAX_RENDERED_BOT_NAME_LENGTH` 做中间省略，文本摘要仍使用完整名称。
 
-状态图 payload 中的当月流量由 `TrafficUsageRecorder` 格式化为详情框的 `Traffic` 行；关闭流量统计时该行不渲染。
+状态图 payload 中的当月流量由 `TrafficUsageRecorder` 格式化为详情框的 `Traffic` 行，月份使用英文缩写，例如 `Jul`；关闭流量统计时该行不渲染。
 
 ## `core/utils.py`
 
