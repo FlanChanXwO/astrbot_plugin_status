@@ -6,6 +6,7 @@
 main.py
   -> core.ConfigManager
   -> core.TrafficUsageRecorder
+       -> core.JsonStateStore
   -> core.HtmlRender
        -> core.BotIdentityResolver
        -> core.SystemDataSource
@@ -70,9 +71,17 @@ macOS 的 CPU 详情名称优先从 `system_profiler SPHardwareDataType` 的 `Ch
 
 - 使用 `psutil.net_io_counters()` 读取整机上传/下载累计字节数
 - 使用独立采样基线，不复用 `SystemDataSource.get_net_speed_kbs()` 的瞬时网速基线
-- 将当前自然月累计、上次采样基线和本月提醒状态写入插件数据目录的 `monthly_traffic.json`
+- 将当前自然月累计、上次采样基线和本月提醒状态写入插件数据目录的 `status_state.json` 中的 `traffic_monitor` 命名空间
 - 月份变化、系统重启或计数器回退时重新建立基线，不补记无法观察到的流量
 - 当配置开启提醒且上传+下载合计达到阈值时，每个自然月最多向配置的 UMO 发送一次提醒
+
+## `core/state_store.py`
+
+`JsonStateStore` 负责插件级轻量状态持久化：
+
+- 使用单个 `status_state.json` 承载多个功能命名空间，避免未来功能继续增加散落 JSON 文件
+- 写入时先写临时文件再替换，降低半写入破坏状态的概率
+- 只保存运行态轻量状态，不保存完整历史指标
 
 `HtmlRender.build_render_data()` 负责把模板、CSS、图片资源和系统数据组装为：
 

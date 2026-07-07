@@ -34,7 +34,9 @@ def test_traffic_usage_owns_monthly_persistence() -> None:
 
     assert "class TrafficUsageRecorder" in traffic_source
     assert "psutil.net_io_counters" in traffic_source
-    assert "MONTHLY_TRAFFIC_STATE_FILE" in traffic_source
+    assert "JsonStateStore" in traffic_source
+    assert "TRAFFIC_STATE_NAMESPACE" in traffic_source
+    assert "status_state.json" not in main_source
     assert "monthly_traffic.json" not in main_source
     assert "net_io_counters" not in main_source
 

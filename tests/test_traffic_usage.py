@@ -22,13 +22,15 @@ create_core_package(PACKAGE_NAME)
 
 load_core_module(PACKAGE_NAME, "constants")
 load_core_module(PACKAGE_NAME, "logger")
+load_core_module(PACKAGE_NAME, "state_store")
 config_module = load_core_module(PACKAGE_NAME, "config_manager")
 traffic_module = load_core_module(PACKAGE_NAME, "traffic_usage")
 
 TrafficMonitorConfig = config_module.TrafficMonitorConfig
 TrafficUsageRecorder = traffic_module.TrafficUsageRecorder
 MonthlyTrafficUsage = traffic_module.MonthlyTrafficUsage
-MONTHLY_TRAFFIC_STATE_FILE = traffic_module.MONTHLY_TRAFFIC_STATE_FILE
+PLUGIN_STATE_FILE = traffic_module.PLUGIN_STATE_FILE
+TRAFFIC_STATE_NAMESPACE = traffic_module.TRAFFIC_STATE_NAMESPACE
 build_alert_text = traffic_module.build_alert_text
 
 pytestmark = pytest.mark.asyncio
@@ -98,7 +100,9 @@ async def test_first_sample_builds_baseline_without_usage(tmp_path: Path) -> Non
     assert usage.month == "2026-07"
     assert usage.upload_bytes == 0
     assert usage.download_bytes == 0
-    assert (tmp_path / MONTHLY_TRAFFIC_STATE_FILE).exists()
+    assert (tmp_path / PLUGIN_STATE_FILE).exists()
+    saved = json.loads((tmp_path / PLUGIN_STATE_FILE).read_text("utf-8"))
+    assert "schema_version" not in saved[TRAFFIC_STATE_NAMESPACE]
 
 
 async def test_same_month_samples_accumulate_deltas(tmp_path: Path) -> None:
@@ -155,14 +159,14 @@ async def test_counter_reset_does_not_create_negative_usage(
 async def test_corrupted_state_file_recovers_with_new_baseline(
     tmp_path: Path,
 ) -> None:
-    (tmp_path / MONTHLY_TRAFFIC_STATE_FILE).write_text("{bad json", encoding="utf-8")
+    (tmp_path / PLUGIN_STATE_FILE).write_text("{bad json", encoding="utf-8")
     recorder = _recorder(tmp_path, counters=[(100, 200)])
 
     usage = await recorder.sample()
-    saved = json.loads((tmp_path / MONTHLY_TRAFFIC_STATE_FILE).read_text("utf-8"))
+    saved = json.loads((tmp_path / PLUGIN_STATE_FILE).read_text("utf-8"))
 
     assert usage.total_bytes == 0
-    assert saved["month"] == "2026-07"
+    assert saved[TRAFFIC_STATE_NAMESPACE]["month"] == "2026-07"
 
 
 async def test_alert_is_sent_once_per_month(tmp_path: Path) -> None:

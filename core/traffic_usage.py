@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import datetime as dt
-import json
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,14 +11,15 @@ from typing import Any
 import psutil
 
 from .config_manager import TrafficMonitorConfig
-from .constants import MONTHLY_TRAFFIC_STATE_FILE, TRAFFIC_SAMPLE_INTERVAL_SECONDS
+from .constants import PLUGIN_STATE_FILE, TRAFFIC_SAMPLE_INTERVAL_SECONDS
 from .logger import logger
+from .state_store import JsonStateStore
 
 BYTES_PER_KB = 1024
 BYTES_PER_MB = BYTES_PER_KB**2
 BYTES_PER_GB = BYTES_PER_KB**3
 BYTES_PER_TB = BYTES_PER_KB**4
-STATE_SCHEMA_VERSION = 1
+TRAFFIC_STATE_NAMESPACE = "traffic_monitor"
 MONTH_ABBREVIATIONS = (
     "Jan",
     "Feb",
@@ -83,7 +83,7 @@ class TrafficUsageRecorder:
         sample_interval_seconds: int = TRAFFIC_SAMPLE_INTERVAL_SECONDS,
     ) -> None:
         self.data_dir = data_dir
-        self.state_path = self.data_dir / MONTHLY_TRAFFIC_STATE_FILE
+        self.state_store = JsonStateStore(self.data_dir, PLUGIN_STATE_FILE)
         self.config = config
         self.send_alert = send_alert
         self.counter_reader = counter_reader or psutil.net_io_counters
@@ -211,22 +211,17 @@ class TrafficUsageRecorder:
             return {}
 
     def _load_state_sync(self) -> dict[str, Any]:
-        if not self.state_path.exists():
-            return {}
-        with self.state_path.open("r", encoding="utf-8") as file:
-            data = json.load(file)
-        return data if isinstance(data, dict) else {}
+        return self.state_store.load_namespace(TRAFFIC_STATE_NAMESPACE)
 
     async def _save_state(self, state: dict[str, Any]) -> None:
         await asyncio.to_thread(self._save_state_sync, state)
 
     def _save_state_sync(self, state: dict[str, Any]) -> None:
-        self.data_dir.mkdir(parents=True, exist_ok=True)
-        temp_path = self.state_path.with_suffix(".tmp")
-        with temp_path.open("w", encoding="utf-8") as file:
-            json.dump(state, file, ensure_ascii=False, indent=2, sort_keys=True)
-            file.write("\n")
-        temp_path.replace(self.state_path)
+        self.state_store.save_namespace(
+            TRAFFIC_STATE_NAMESPACE,
+            state,
+            reset_on_corrupt=True,
+        )
 
     def _new_state(
         self,
@@ -236,7 +231,6 @@ class TrafficUsageRecorder:
         timestamp: float,
     ) -> dict[str, Any]:
         return {
-            "schema_version": STATE_SCHEMA_VERSION,
             "month": month,
             "upload_bytes": 0,
             "download_bytes": 0,

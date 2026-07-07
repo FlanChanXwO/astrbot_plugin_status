@@ -155,6 +155,8 @@
 
 如需提醒，在 `traffic_monitor` 中开启 `alert_enabled`，设置 `alert_threshold_gb`，并填写提醒目标 `alert_target_umo`（格式如 `aiocqhttp:group:123456`）。阈值支持小数 GB，例如 `0.02`；当本月上传和下载合计达到阈值时，每个自然月最多提醒一次。
 
+流量状态保存在 AstrBot 插件数据目录的 `status_state.json` 中。
+
 
 ### 自定义背景图
 
