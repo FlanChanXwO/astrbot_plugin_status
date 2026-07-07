@@ -36,6 +36,14 @@ html_render_module = load_core_module(PACKAGE_NAME, "html_render")
 HtmlRender = html_render_module.HtmlRender
 
 
+class _FakeTrafficRecorder:
+    async def sample(self) -> SimpleNamespace:
+        return SimpleNamespace(
+            card_text="Jul  ↑ 1.0 MB | ↓ 2.0 MB",
+            summary_text="合计 3.0 MB，上传 1.0 MB，下载 2.0 MB",
+        )
+
+
 def _metric(
     icon_class: str, label: str, value: str, offset: float
 ) -> dict[str, object]:
@@ -148,13 +156,6 @@ async def test_render_payload_uses_truncated_bot_name(
         def get_uptime_text(self) -> str:
             return "00:00:00"
 
-    class FakeTrafficRecorder:
-        async def sample(self) -> SimpleNamespace:
-            return SimpleNamespace(
-                card_text="Jul  ↑ 1.0 MB | ↓ 2.0 MB",
-                summary_text="合计 3.0 MB，上传 1.0 MB，下载 2.0 MB",
-            )
-
     async def fake_html_render(*_args: object, **_kwargs: object) -> str:
         return "image-url"
 
@@ -172,7 +173,7 @@ async def test_render_payload_uses_truncated_bot_name(
         html_render=fake_html_render,
         data_source=FakeDataSource(),
         bot_identity_resolver=FakeResolver(),
-        traffic_recorder=FakeTrafficRecorder(),
+        traffic_recorder=_FakeTrafficRecorder(),
     )
 
     _, payload = await renderer.build_render_data(SimpleNamespace())
@@ -215,13 +216,6 @@ async def test_status_text_includes_monthly_traffic() -> None:
         def get_uptime_text(self) -> str:
             return "00:00:01"
 
-    class FakeTrafficRecorder:
-        async def sample(self) -> SimpleNamespace:
-            return SimpleNamespace(
-                card_text="Jul  ↑ 1.0 MB | ↓ 2.0 MB",
-                summary_text="合计 3.0 MB，上传 1.0 MB，下载 2.0 MB",
-            )
-
     async def fake_html_render(*_args: object, **_kwargs: object) -> str:
         return "image-url"
 
@@ -236,7 +230,7 @@ async def test_status_text_includes_monthly_traffic() -> None:
         html_render=fake_html_render,
         data_source=FakeDataSource(),
         bot_identity_resolver=FakeResolver(),
-        traffic_recorder=FakeTrafficRecorder(),
+        traffic_recorder=_FakeTrafficRecorder(),
     )
 
     text = await renderer.build_status_text(SimpleNamespace())
