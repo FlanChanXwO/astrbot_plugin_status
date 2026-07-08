@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 from pathlib import Path
 from threading import RLock
 from typing import Any, ClassVar
@@ -66,8 +68,16 @@ class JsonStateStore:
     def _save(self, data: dict[str, Any]) -> None:
         with self._lock:
             self.data_dir.mkdir(parents=True, exist_ok=True)
-            temp_path = self.path.with_suffix(".tmp")
-            with temp_path.open("w", encoding="utf-8") as file:
-                json.dump(data, file, ensure_ascii=False, indent=2, sort_keys=True)
-                file.write("\n")
-            temp_path.replace(self.path)
+            # 每次写入使用独立临时文件，避免跨进程共用固定名导致互相覆盖。
+            fd, temp_name = tempfile.mkstemp(
+                dir=self.data_dir, prefix=f"{self.path.name}.", suffix=".tmp"
+            )
+            temp_path = Path(temp_name)
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as file:
+                    json.dump(data, file, ensure_ascii=False, indent=2, sort_keys=True)
+                    file.write("\n")
+                temp_path.replace(self.path)
+            except BaseException:
+                temp_path.unlink(missing_ok=True)
+                raise
