@@ -77,7 +77,25 @@ class JsonStateStore:
                 with os.fdopen(fd, "w", encoding="utf-8") as file:
                     json.dump(data, file, ensure_ascii=False, indent=2, sort_keys=True)
                     file.write("\n")
+                    # 替换前把数据刷到磁盘，避免崩溃时正式文件只剩缓冲里的半成品。
+                    file.flush()
+                    os.fsync(file.fileno())
                 temp_path.replace(self.path)
+                self._fsync_dir(self.data_dir)
             except BaseException:
                 temp_path.unlink(missing_ok=True)
                 raise
+
+    @staticmethod
+    def _fsync_dir(directory: Path) -> None:
+        """替换后同步父目录目录项；Windows 等不支持时静默跳过。"""
+        try:
+            dir_fd = os.open(directory, os.O_RDONLY)
+        except (OSError, AttributeError):
+            return
+        try:
+            os.fsync(dir_fd)
+        except OSError:
+            pass
+        finally:
+            os.close(dir_fd)
