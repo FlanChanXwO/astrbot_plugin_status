@@ -35,10 +35,10 @@ AstrbotPluginDev/data/plugins/astrbot_plugin_status
 ## 常用目录
 
 ```text
-core/       # 数据采集、渲染 payload、模型和通用工具
+core/       # 数据采集、当月流量统计、渲染 payload、模型和通用工具
 templates/  # T2I HTML/CSS、字体和默认图片资源
 assets/     # README 预览图
-tests/      # 测试入口，当前只有占位包
+tests/      # 测试入口和回归用例
 docs/       # 项目和开发文档
 ```
 

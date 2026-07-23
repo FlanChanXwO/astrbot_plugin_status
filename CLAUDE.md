@@ -10,17 +10,17 @@
 
 - **语言**: Python 3.10+
 - **框架**: AstrBot plugin system
-- **插件职责**: 采集系统指标、渲染状态卡片、可选调用 LLM 分析图片
+- **插件职责**: 采集系统指标、记录当月流量、渲染状态卡片、可选调用 LLM 分析图片
 - **许可证**: AGPL
 
 主要目录：
 
 ```text
 main.py      插件生命周期、命令入口、LLM tool 注册和 LLM 分析编排
-core/        数据采集、渲染 payload、模型和通用工具
+core/        数据采集、当月流量统计、渲染 payload、模型和通用工具
 templates/   T2I HTML/CSS、字体和默认图片资源
 assets/      README 预览图
-tests/       测试入口，当前只有占位包
+tests/       测试入口和回归用例
 ```
 
 ## 阅读入口

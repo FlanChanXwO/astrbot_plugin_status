@@ -30,5 +30,6 @@ class StatusPayload:
     plugin_count: str  # 插件数量 (格式化后的字符串)
     upload_speed: str  # 上传速度
     download_speed: str  # 下载速度
+    monthly_traffic: str  # 当月流量统计
     dashboard_name: str  # 仪表盘名称
     uptime: str  # 运行时间
