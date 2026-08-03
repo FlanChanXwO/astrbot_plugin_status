@@ -5,7 +5,6 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 import mcp.types
-
 from astrbot.api.event import AstrMessageEvent
 from astrbot.api.star import Context, StarTools
 from astrbot.core.exceptions import ProviderNotFoundError

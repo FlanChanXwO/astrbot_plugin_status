@@ -16,8 +16,8 @@ from .constants import (
     RENDER_OPTIONS,
 )
 from .data_source import SystemDataSource
-from .models import StatusPayload
 from .logger import logger
+from .models import StatusPayload
 from .traffic_usage import MonthlyTrafficUsage, TrafficUsageRecorder
 from .utils import get_random_file_data_uri, inline_fonts_in_css, truncate_middle
 

@@ -160,7 +160,7 @@ class TrafficUsageRecorder:
 
     async def close(self) -> None:
         """预留异步清理入口，便于生命周期代码保持一致。"""
-        return None
+        return
 
     def _read_counter_bytes(self) -> tuple[int, int]:
         counters = self.counter_reader()
